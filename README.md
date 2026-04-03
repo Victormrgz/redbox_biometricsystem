@@ -15,3 +15,7 @@ src/
 │   └── admin/          # Panel de gestión (Roles, Pagos, Invitaciones)
 ├── styles/             # Configuración global de temas (Colores RedBox, Tipografías)
 └── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)
+
+Instalar React Navigator para el funcionamiento del menu hamburguesa:
+
+1) Ir al siguiente link: https://reactnavigation.org/docs/drawer-navigator
