@@ -20,6 +20,6 @@ src/
 │   ├── training/       # Creación y visualización de WODs/Planificaciones
 │   └── admin/          # Panel de gestión (Roles, Pagos, Invitaciones)
 ├── styles/             # Configuración global de temas (Colores RedBox, Tipografías)
-└── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)
+└── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)```##
 
 ## 📂 Estructura del Proyecto
