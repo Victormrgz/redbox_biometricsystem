@@ -30,6 +30,7 @@ function MyTabs() {
                         tabBarIcon: ({ color, size }) => (
                             <FontAwesome name="home" size={24} color={color} />
                         ),
+                        headerShown: false, /**Oculta el encabezado de cada pantalla */
                     }}
 
                 />
@@ -40,6 +41,7 @@ function MyTabs() {
                         tabBarIcon: ({ color, size }) => (
                             <MaterialIcons name="edit-note" size={24} color={color} />
                         ),
+                        headerShown: false, /**Oculta el encabezado de cada pantalla */
                     }}
                 />
                 <Tab.Screen 
@@ -49,6 +51,7 @@ function MyTabs() {
                         tabBarIcon: ({ color, size }) => (
                             <MaterialIcons name="event-note" size={24} color={color}/>
                         ),
+                        headerShown: false, /**Oculta el encabezado de cada pantalla */
                     }}
                 />
                 <Tab.Screen 
@@ -58,6 +61,7 @@ function MyTabs() {
                         tabBarIcon: ({ color, size }) => (
                             <MaterialIcons name="launch" size={24} color={color} />
                         ),
+                        headerShown: false, /**Oculta el encabezado de cada pantalla */
                     }}
                 />
             </Tab.Navigator>
