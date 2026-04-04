@@ -29,6 +29,7 @@ src/
 4) Si al fusioanr sale un editor de vim dentro de la consola de git con algo abajo que dice INSERT presionamos la tecla ESC y el mensaje --INSERT-- dejara de salir
    despues ponemos en la consola :wq y el merge se hara
 5) Para subir los cambios a la main: git push origin main
+6) Ejecutar git checkout -tu rama para cambiarnos a nuestra rama y no trabajar en la main
 
 ## 📂 Instalacion de React Navigation para navegacion de la app:
 
