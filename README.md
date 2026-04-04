@@ -22,4 +22,9 @@ src/
 ├── styles/             # Configuración global de temas (Colores RedBox, Tipografías)
 └── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)```##
 
-## 📂 Estructura del Proyecto
+## 📂 Instalacion de React Navigation para navegacion de la app:
+
+1) Ir al siguiente link: https://reactnavigation.org/docs/drawer-navigator/?config=dynamic#drawertype donde sale toda la documentacion
+2) Abrir la terminal en VsCode y ejecutar el siguiente comando: npm install @react-navigation/drawer
+3) Despues de ejecutar el comando anterior ejecutar el siguiente comando: npx expo install react-native-gesture-handler react-native-reanimated react-native-worklets
+4) Despues ejecutar el siguiente comando  @react-navigation/bottom-tabs
