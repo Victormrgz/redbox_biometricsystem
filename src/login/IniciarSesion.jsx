@@ -1,16 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 
-const HistoricoDePagos = () => {
+const IniciarSesion = () => {
     return (
     <View style={styles.container}> 
-        <Text>HistoricoDePagos</Text>         
+        <Text>IniciarSesion</Text>         
         <StatusBar style="auto" />
     </View>
 
     ); }     
 
-export default HistoricoDePagos;
+export default IniciarSesion;
 
     const styles = StyleSheet.create({  
     container: {
