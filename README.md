@@ -45,6 +45,7 @@ Anexo video tutorial: https://www.youtube.com/watch?v=PmILHVEWZUY&t=259s
 ## 📂 Usar SVG en react native:
 
 https://www.youtube.com/watch?v=NogJOfpIWsk&t=209s
+npm install -D react-native-svg-transformer
 
 
 
