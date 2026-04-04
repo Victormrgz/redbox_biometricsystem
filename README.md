@@ -22,6 +22,14 @@ src/
 ├── styles/             # Configuración global de temas (Colores RedBox, Tipografías)
 └── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)```##
 
+## 📂 Para actualizar la rama main con los cambios en nuestra rama:
+1) Cambiarnos a la rama maina git checkout main
+2) Trer lo ultimo que haya en la main: git pull origin main
+3) Fusionar nuestra rama con la main: git merge tu-rama
+4) Si al fusioanr sale un editor de vim dentro de la consola de git con algo abajo que dice INSERT presionamos la tecla ESC y el mensaje --INSERT-- dejara de salir
+   despues ponemos en la consola :wq y el merge se hara
+5) Para subir los cambios a la main: git push origin main
+
 ## 📂 Instalacion de React Navigation para navegacion de la app:
 
 1) Ir al siguiente link: https://reactnavigation.org/docs/drawer-navigator/?config=dynamic#drawertype donde sale toda la documentacion
