@@ -5,7 +5,7 @@
 
 Sistema de gestión integral para centros de entrenamiento CrossFit. Esta aplicación permite la administración de atletas, control de pagos, planificación de entrenamientos y gestión de roles.
 
-## 📂 Estructura del Proyecto
+## 📂 Estructura del Proyecto y comandos a utilizar
 
 Para mantener el código escalable y organizado, el proyecto utiliza una arquitectura **basada en módulos y funcionalidades** dentro del directorio principal `src/`.
 
@@ -28,3 +28,7 @@ src/
 2) Abrir la terminal en VsCode y ejecutar el siguiente comando: npm install @react-navigation/drawer
 3) Despues de ejecutar el comando anterior ejecutar el siguiente comando: npx expo install react-native-gesture-handler react-native-reanimated react-native-worklets
 4) Despues ejecutar el siguiente comando  @react-navigation/bottom-tabs
+
+## 📂 Usar SVG en react native:
+
+1) Abrir la terminal de VsCode y ejecutar el siguiente comando: npx expo install react-native-svg
