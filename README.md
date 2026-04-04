@@ -28,9 +28,13 @@ src/
 2) Abrir la terminal en VsCode y ejecutar el siguiente comando: npm install @react-navigation/drawer
 3) Despues de ejecutar el comando anterior ejecutar el siguiente comando: npx expo install react-native-gesture-handler react-native-reanimated react-native-worklets
 4) Despues ejecutar el siguiente comando  @react-navigation/bottom-tabs
+5) Libreria para usar iconos en el menu de navegacion: https://icons.expo.fyi/Index
 
 Anexo video tutorial: https://www.youtube.com/watch?v=PmILHVEWZUY&t=259s
 
 ## 📂 Usar SVG en react native:
 
 1) Abrir la terminal de VsCode y ejecutar el siguiente comando: npx expo install react-native-svg
+
+
+
