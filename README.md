@@ -23,6 +23,7 @@ src/
 └── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)```##
 
 ## 📂 Para actualizar la rama main con los cambios en nuestra rama:
+
 1) Cambiarnos a la rama maina git checkout main
 2) Trer lo ultimo que haya en la main: git pull origin main
 3) Fusionar nuestra rama con la main: git merge tu-rama
@@ -43,7 +44,8 @@ Anexo video tutorial: https://www.youtube.com/watch?v=PmILHVEWZUY&t=259s
 
 ## 📂 Usar SVG en react native:
 
-1) Abrir la terminal de VsCode y ejecutar el siguiente comando: npx expo install react-native-svg
+https://www.youtube.com/watch?v=NogJOfpIWsk&t=209s
+
 
 
 
