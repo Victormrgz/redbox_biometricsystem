@@ -1,22 +1,39 @@
+import React from 'react';
+// ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
+import { StyleSheet, View, Platform, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native'; 
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import HeaderColor from '../componentes/HeaderColor';
+import Constants from 'expo-constants';
 
 const MisResultados = () => {
     return (
-    <View style={styles.container}> 
-        <Text>MisResultados</Text>         
-        <StatusBar style="auto" />
-    </View>
+        <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.container}> 
+            <HeaderColor /> {/*Logo de la app*/}
+            
+            
+        </ScrollView>
+        </SafeAreaView>
+    );
+};
 
-    ); }     
-
-export default MisResultados;
-
-    const styles = StyleSheet.create({  
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#fff', // O el color de fondo de tu app
+        // En Android, SafeAreaView a veces necesita un padding manual
+        paddingTop: Constants.statusBarHeight,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',        
-        alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: '#fff',
+        
     },
+    content: {
+        flex: 1,
+        padding: 20,
+    },
+    
 });
+
+export default MisResultados;
