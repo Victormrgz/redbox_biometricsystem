@@ -47,6 +47,10 @@ Anexo video tutorial: https://www.youtube.com/watch?v=PmILHVEWZUY&t=259s
 https://www.youtube.com/watch?v=NogJOfpIWsk&t=209s
 npm install -D react-native-svg-transformer
 
+## 📂 Libreria de iconos:
+
+https://icons.expo.fyi/Index
+
 ## 📂 Para usar el imput de fecha y hora
 
 npm install @react-native-community/datetimepicker@8.2.0
