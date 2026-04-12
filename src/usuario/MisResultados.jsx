@@ -97,6 +97,48 @@ const MisResultados = () => {
                 <TouchableOpacity style={[styles.button, styles.btnRed]}>
                     <Text style={styles.textWhite}>Guardar Resultado</Text>
                 </TouchableOpacity>
+
+                <Text style={styles.titulo_reservas}>Tus records personales:</Text>
+                <View style={styles.card}>
+                    {/* Grupo 1 */}
+                <View style={styles.headerRow}>
+                    <Text style={styles.colTitulo}>Movimiento</Text>
+                    <Text style={styles.colTitulo}>Peso</Text>
+                    <Text style={styles.colTitulo}>Fecha</Text>
+                </View>
+                <View style={styles.dataRow}>
+                    <Text style={styles.colDatos}>Snatch</Text>
+                    <Text style={styles.colDatos}>155,0lb</Text>
+                    <Text style={styles.colDatos}>06/10/2025</Text>
+                </View>
+
+                <View style={styles.separator} />
+
+                {/* Grupo 2 */}
+                <View style={styles.headerRow}>
+                    <Text style={styles.colTitulo}>Movimiento</Text>
+                    <Text style={styles.colTitulo}>Peso</Text>
+                    <Text style={styles.colTitulo}>Fecha</Text>
+                </View>
+                <View style={styles.dataRow}>
+                    <Text style={styles.colDatos}>Power Snatch</Text>
+                    <Text style={styles.colDatos}>150,0lb</Text>
+                    <Text style={styles.colDatos}>18/09/2025</Text>
+                </View>
+                <View style={styles.separator} />
+                
+                {/* Grupo 3 */}
+                <View style={styles.headerRow}>
+                    <Text style={styles.colTitulo}>Movimiento</Text>
+                    <Text style={styles.colTitulo}>Peso</Text>
+                    <Text style={styles.colTitulo}>Fecha</Text>
+                </View>
+                <View style={styles.dataRow}>
+                    <Text style={styles.colDatos}>Clean & Jerk</Text>
+                    <Text style={styles.colDatos}>195,0lb</Text>
+                    <Text style={styles.colDatos}>05/10/2025</Text>
+                </View>
+                </View>
             </View>
             
             
@@ -202,6 +244,47 @@ const styles = StyleSheet.create({
         color: '#666',
         marginBottom: 5,
     },
+    card: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    margin: 10,
+    elevation: 2, // Sombra en Android
+    shadowColor: '#000', // Sombra en iOS
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+},
+  dataRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  colTitulo: {
+    flex: 2.5, // Más espacio para el nombre del ejercicio
+    fontWeight: 'bold',
+    color: '#000',
+    fontSize: 14,
+  },
+  colDatos: {
+    flex: 2.5,
+    color: '#444',
+    fontSize: 14,
+  },
+  colFecha: {
+    flex: 2,
+    color: '#444',
+    fontSize: 14,
+    textAlign: 'right', // Alineado a la derecha como en la imagen
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 10,
+  },
     
 });
 
