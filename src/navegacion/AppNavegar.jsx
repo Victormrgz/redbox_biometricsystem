@@ -8,8 +8,15 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import Inicio from "../usuario/Inicio";
 import Clases from "../training/Clases";
+import CrearPlanificacion from "../training/CrearPlanificacion";
+import VerPlanificacion from "../training/VerPlanificacion";
 import MisReservas from "../usuario/MisReservas";
 import MisResultados from "../usuario/MisResultados";
+import Perfil from "../usuario/Perfil";
+import GestionarRoles from "../admin/GestionarRoles";
+import RegistrarPago from "../admin/RegistrarPago";
+import HistoricoPagos from "../admin/HistoricoPagos";
+import Suscripciones from "../admin/Suscripciones";
 
 const Tab = createBottomTabNavigator();
 
@@ -62,6 +69,83 @@ function MyTabs() {
                             <MaterialIcons name="launch" size={24} color={color} />
                         ),
                         headerShown: false, /**Oculta el encabezado de cada pantalla */
+                    }}
+                />
+                <Tab.Screen
+                    name="CrearPlanificacion"
+                    component={CrearPlanificacion}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
+                    }}
+                />
+                <Tab.Screen
+                    name="VerPlanificacion"
+                    component={VerPlanificacion}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
+                    }}
+                />
+                <Tab.Screen
+                    name="Perfil"
+                    component={Perfil}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
+                    }}
+                />
+                <Tab.Screen
+                    name="GestionarRoles"
+                    component={GestionarRoles}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
+                    }}
+                />
+                <Tab.Screen
+                    name="RegistrarPago"
+                    component={RegistrarPago}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
+                    }}
+                />
+                <Tab.Screen
+                    name="HistoricoPagos"
+                    component={HistoricoPagos}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
+                    }}
+                />
+                <Tab.Screen
+                    name="Suscripciones"
+                    component={Suscripciones}
+                    options={{
+                        headerShown: false,
+                        tabBarButton: () => null,
+                        tabBarLabel: () => null,
+                        tabBarIcon: () => null,
+                        tabBarItemStyle: { display: 'none' },
                     }}
                 />
             </Tab.Navigator>

@@ -4,8 +4,10 @@ import { StyleSheet, View, Platform, Text, TouchableOpacity, SafeAreaView, Scrol
 import { StatusBar } from 'expo-status-bar';
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
+import { useNavigation } from '@react-navigation/native';
 
 const Inicio = () => {
+    const navigation = useNavigation();
     return (
         <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container}> 
@@ -62,20 +64,27 @@ const Inicio = () => {
                 <View style={styles.containerMenu}>
   {/* Fila 1: Planificación */}
                 <View style={styles.row}>
-                    <TouchableOpacity style={[styles.button, styles.btnRed]}>
+                    <TouchableOpacity
+                        style={[styles.button, styles.btnRed]}
+                        onPress={() => navigation.navigate('CrearPlanificacion')}
+                    >
                         <Text style={styles.textWhite}>Crear planificación</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.button, styles.btnRed]}>
+                    <TouchableOpacity
+                        style={[styles.button, styles.btnRed]}
+                        onPress={() => navigation.navigate('VerPlanificacion')}
+                    >
                         <Text style={styles.textWhite}>Ver planificación</Text>
                     </TouchableOpacity>
                 </View>
 
   {/* Fila 2: Perfil y Roles */}
                 <View style={styles.row}>
-                    <TouchableOpacity style={[styles.button, styles.btnGray]}>
+                    <TouchableOpacity style={[styles.button, styles.btnGray]}
+                    onPress={() => navigation.navigate('Perfil')}>
                         <Text style={styles.textWhite}>Editar perfil</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.button, styles.btnGray]}>
+                    <TouchableOpacity style={[styles.button, styles.btnGray]} onPress={() => navigation.navigate('GestionarRoles')}>
                         <Text style={styles.textWhite}>Gestionar roles</Text>
                     </TouchableOpacity>
                 </View>
