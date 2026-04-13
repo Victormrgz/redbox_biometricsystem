@@ -90,15 +90,18 @@ const Inicio = () => {
                 </View>
 
   {/* Botones de ancho completo */}
-                <TouchableOpacity style={styles.buttonFull}>
+                <TouchableOpacity style={styles.buttonFull}
+                onPress={() => navigation.navigate('RegistrarPago')}>
                     <Text style={styles.textDark}>Registrar pago</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.buttonFull}>
+                <TouchableOpacity style={styles.buttonFull}
+                onPress={() => navigation.navigate('HistoricoPagos')}>
                     <Text style={styles.textDark}>Historial de pagos</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.buttonFull}>
+                <TouchableOpacity style={styles.buttonFull}
+                onPress={() => navigation.navigate('Suscripciones')}>
                     <Text style={styles.textDark}>Suscripciones</Text>
                 </TouchableOpacity>
                 </View>
