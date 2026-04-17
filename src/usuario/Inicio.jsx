@@ -8,20 +8,19 @@ import BotonRojo from '../componentes/BotonRojo';
 import BotonGris from '../componentes/BotonGris';
 import BotonBlanco from '../componentes/BotonBlanco';
 import CardPantallaInicio from '../componentes/CardPantallaInicio';
-
+import TituloPrincipal from '../componentes/TituloPrincipal';
+import TituloSecundario from '../componentes/TituloSecundario';
 
 const Inicio = () => {
     const navigation = useNavigation();
     return (
         <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container}> 
-            <HeaderColor /> {/*Logo de la app*/}
-            
-            {/* Vista Inicio */}
+            <HeaderColor />{/* Vista Inicio */}
             <View style={styles.content}>
-                <Text style={styles.titulo_principal}>Hola, Victor!</Text>
-                <Text style={styles.titulo_secundario}>Bienvenido al panel de control</Text>
-                <Text style={styles.titulo_secundario}>07/04/2026</Text>
+                <TituloPrincipal titulo="Inicio" />
+                <TituloSecundario titulo="Bienvenido al panel de control" />
+                <TituloSecundario titulo="07/04/2026" />
 
                 <View style={styles.IMC}>
                     <Text style={styles.titulo_IMC}>Tu IMC actual: <Text style={styles.numero}>20.23</Text> <Text style={styles.normal}>(Normal)</Text> </Text>
@@ -42,35 +41,32 @@ const Inicio = () => {
                 </View>
 
                 <View style={styles.containerMenu}>
-  {/* Fila 1: Planificación */}
                 <View style={styles.row}>
                     <BotonRojo 
                         titulo="Crear Planificación" 
-                        onPress={() => console.log("Crear Planificación")}
+                        onPress={() => navigation.navigate('CrearPlanificacion')}
                         style={styles.botonGrid}
                     />
                     <BotonRojo 
                         titulo="Ver Planificación" 
-                        onPress={() => console.log("Ver Planificación")}
+                        onPress={() => navigation.navigate('VerPlanificacion')}
                         style={styles.botonGrid}
                     />
                 </View>
 
-  {/* Fila 2: Perfil y Roles */}
-                <View style={styles.row}>
+                <View style={styles.row}>{/* Fila 2: Perfil y Roles */}
                     <BotonGris 
                         titulo="Editar Perfil" 
-                        onPress={() => console.log("Editar Perfil")}
+                        onPress={() => navigation.navigate('Perfil')}
                         style={styles.botonGrid}
                     />
                     <BotonGris 
                         titulo="Gestionar Roles" 
-                        onPress={() => console.log("Gestionar Roles")}
+                        onPress={() => navigation.navigate('GestionarRoles')}
                         style={styles.botonGrid}
                     />
                 </View>
 
-  {/* Botones de ancho completo */}
                 <BotonBlanco 
                         titulo="Registrar Pago" 
                         onPress={() => console.log("Registrar Pago")}
@@ -110,15 +106,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 20,
-    },
-    titulo_principal: {
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
-    titulo_secundario: {
-        fontSize: 18,
-        color: '#666',
-        marginBottom: 5,
     },
     IMC: {
         marginVertical: 20,

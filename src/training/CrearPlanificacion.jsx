@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 import DateTimePicker  from '@react-native-community/datetimepicker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import BotonRojo from '../componentes/BotonRojo';
+import TituloPrincipal from '../componentes/TituloPrincipal';
 
 const CrearPlanificacion = () => {
      const [showDate, setShowDate] = useState(false);
@@ -19,7 +20,7 @@ const CrearPlanificacion = () => {
     return (
     <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container}> 
-            <HeaderColor /> {/*Logo de la app*/}
+            <HeaderColor />
 
             <View style={styles.content}>
                 <Text style={styles.titulo_principal}>Crear Planificación</Text>
@@ -29,11 +30,11 @@ const CrearPlanificacion = () => {
                     <Text style={styles.titulo_reservas}>Fecha</Text>
                     
                         <View style={styles.contenedor_fecha}>
-                            <TouchableOpacity onPress={() => setShowDate(true)} style={styles.boton_fecha} > 
+                            <TouchableOpacity onPress={() => setShowDate(true)} style={styles.boton_fecha}>
                             <TextInput
                                 placeholder='Date'
                                 editable={false}
-                                value = {formData.date ? new Date(formData.date).toLocaleDateString() : ''}
+                                value={formData.date ? new Date(formData.date).toLocaleDateString() : ''}
                             />
                             <MaterialIcons name="date-range" size={24} color="black" />
                             </TouchableOpacity>
@@ -73,10 +74,9 @@ const CrearPlanificacion = () => {
                 </View>
             </View>
         </ScrollView>
-    </SafeAreaView>    
-
-    ); }     
-
+    </SafeAreaView>
+    );
+};
 export default CrearPlanificacion;
 
     const styles = StyleSheet.create({  

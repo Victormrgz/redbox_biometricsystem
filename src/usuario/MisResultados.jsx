@@ -1,44 +1,54 @@
 import React, { useState } from 'react';
-// ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Platform, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from 'react-native'; 
-import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import DateTimePicker  from '@react-native-community/datetimepicker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import TituloPrincipal from '../componentes/TituloPrincipal';
+import TituloSecundario from '../componentes/TituloSecundario';
+import TituloTerciario from '../componentes/TituloTerciario';
+import BotonRojo from '../componentes/BotonRojo';
+import CardRecordsPersonales from '../componentes/CardRecordsPersonales';
+
 
 const MisResultados = () => {
     const [showDate, setShowDate] = useState(false);
-
     const [formData, setFormData] = useState({
         date: '',
-        time: '',
     });
+
+    // Datos de ejemplo para los records
+    const misRecords = [
+        { movimiento: 'Snatch', peso: '155,0lb', fecha: '06/10/2025' },
+        { movimiento: 'Power Snatch', peso: '150,0lb', fecha: '18/09/2025' },
+        { movimiento: 'Clean & Jerk', peso: '195,0lb', fecha: '05/10/2025' },
+    ];
+
     return (
         <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container}> 
-            <HeaderColor /> {/*Logo de la app*/}
+            <HeaderColor />
 
             <View style={styles.content}>
-                <Text style={styles.titulo_principal}>Mis Resultados</Text>
-                <Text style={styles.titulo_secundario}>Registra tus levantamientos y consulta tus records personales.</Text>
+                <TituloPrincipal titulo="Mis Resultados" />
+                <TituloSecundario titulo="Registra tus levantamientos y consulta tus records personales." />
 
                 <View style={styles.contenedor_grid}>
                     <View style={styles.grid_item}>
-                        <Text style={styles.titulo_reservas}>Movimiento:</Text>
+                        <TituloTerciario titulo="Movimiento:" />
                         <TouchableOpacity style={styles.dropdownBusca} onPress={() => {/* Lógica para abrir lista */}}>
                             <Text style={styles.textValue}>----------</Text>
                             <MaterialIcons name="keyboard-arrow-down" size={24} color="gray" />
                         </TouchableOpacity>
                     </View>
                     <View style={styles.grid_item}>
-                        <Text style={styles.titulo_reservas}>Fecha:</Text>
+                        <TituloTerciario titulo="Fecha:" />
                         <View style={styles.contenedor_fecha}>
                         <TouchableOpacity onPress={() => setShowDate(true)} style={styles.boton_fecha} > 
                         <TextInput
                             placeholder='Date'
                             editable={false}
-                            value = {formData.date ? new Date(formData.date).toLocaleDateString() : ''}
+                            value={formData.date ? new Date(formData.date).toLocaleDateString() : ''}
                         />
                         <MaterialIcons name="date-range" size={24} color="black" />
                         </TouchableOpacity>
@@ -62,7 +72,7 @@ const MisResultados = () => {
                 </View>
                     </View>
                     <View style={styles.grid_item}>
-                        <Text style={styles.titulo_reservas}>Rondas:</Text>
+                        <TituloTerciario titulo="Rondas:" />
                         <TextInput
                             style={styles.input}
                             editable={false}              // <--- Evita que el usuario escriba
@@ -70,7 +80,7 @@ const MisResultados = () => {
                         />
                     </View>
                     <View style={styles.grid_item}>
-                        <Text style={styles.titulo_reservas}>Repeticiones:</Text>
+                        <TituloTerciario titulo="Repeticiones:" />
                         <TextInput
                             style={styles.input}
                             editable={false}              // <--- Evita que el usuario escriba
@@ -78,7 +88,7 @@ const MisResultados = () => {
                         />
                     </View>
                     <View style={styles.grid_item}>
-                        <Text style={styles.titulo_reservas}>Peso:</Text>
+                        <TituloTerciario titulo="Peso:" />
                         <TextInput
                             style={styles.input}
                             editable={false}              // <--- Evita que el usuario escriba
@@ -86,7 +96,7 @@ const MisResultados = () => {
                         />
                     </View>
                     <View style={styles.grid_item}>
-                        <Text style={styles.titulo_reservas}>Unidad:</Text>
+                        <TituloTerciario titulo="Unidad:" />
                         <TouchableOpacity style={styles.dropdownBusca} onPress={() => {/* Lógica para abrir lista */}}>
                             <Text style={styles.textValue}>----------</Text>
                             <MaterialIcons name="keyboard-arrow-down" size={24} color="gray" />
@@ -94,51 +104,14 @@ const MisResultados = () => {
                     </View>
                 </View>
 
-                <TouchableOpacity style={[styles.button, styles.btnRed]}>
-                    <Text style={styles.textWhite}>Guardar Resultado</Text>
-                </TouchableOpacity>
+                <BotonRojo 
+                        titulo="Guardar Resultados" 
+                        onPress={() => console.log('Guardar Resultados')}
+                        style={styles.botonMargen}
+                />
 
-                <Text style={styles.titulo_reservas}>Tus records personales:</Text>
-                <View style={styles.card}>
-                    {/* Grupo 1 */}
-                <View style={styles.headerRow}>
-                    <Text style={styles.colTitulo}>Movimiento</Text>
-                    <Text style={styles.colTitulo}>Peso</Text>
-                    <Text style={styles.colTitulo}>Fecha</Text>
-                </View>
-                <View style={styles.dataRow}>
-                    <Text style={styles.colDatos}>Snatch</Text>
-                    <Text style={styles.colDatos}>155,0lb</Text>
-                    <Text style={styles.colDatos}>06/10/2025</Text>
-                </View>
-
-                <View style={styles.separator} />
-
-                {/* Grupo 2 */}
-                <View style={styles.headerRow}>
-                    <Text style={styles.colTitulo}>Movimiento</Text>
-                    <Text style={styles.colTitulo}>Peso</Text>
-                    <Text style={styles.colTitulo}>Fecha</Text>
-                </View>
-                <View style={styles.dataRow}>
-                    <Text style={styles.colDatos}>Power Snatch</Text>
-                    <Text style={styles.colDatos}>150,0lb</Text>
-                    <Text style={styles.colDatos}>18/09/2025</Text>
-                </View>
-                <View style={styles.separator} />
-                
-                {/* Grupo 3 */}
-                <View style={styles.headerRow}>
-                    <Text style={styles.colTitulo}>Movimiento</Text>
-                    <Text style={styles.colTitulo}>Peso</Text>
-                    <Text style={styles.colTitulo}>Fecha</Text>
-                </View>
-                <View style={styles.dataRow}>
-                    <Text style={styles.colDatos}>Clean & Jerk</Text>
-                    <Text style={styles.colDatos}>195,0lb</Text>
-                    <Text style={styles.colDatos}>05/10/2025</Text>
-                </View>
-                </View>
+                 <TituloTerciario titulo="Tus records personales:" />
+                 <CardRecordsPersonales data={misRecords} />
             </View>
             
             
@@ -163,16 +136,10 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
-    titulo_principal: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 15,
-    },
-    titulo_reservas: {
+    titulo_reservas: { // Se mantiene por si se usa en otros textos internos
         fontSize: 20,
         fontWeight: 'bold',
         marginTop: 10,
-        marginBottom: 10,
     },
     contenedor_grid: {
         flexDirection: 'row',
@@ -214,78 +181,11 @@ const styles = StyleSheet.create({
         width: '100%',
         borderColor: '#000',
     },
-    button: {
-        backgroundColor: '#DDDDDD',
-        padding: 10
-    },
-    button: {
-    flex: 0.48, // Para que queden dos por fila con un pequeño espacio
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Sombra suave
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    marginTop: 20
-    },
-    btnRed: {
-    backgroundColor: '#e60000', // Rojo vibrante
-    },
-    textWhite: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 14,
-    },
-    titulo_secundario: {
-        fontSize: 18,
-        color: '#666',
-        marginBottom: 5,
-    },
-    card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    margin: 10,
-    elevation: 2, // Sombra en Android
-    shadowColor: '#000', // Sombra en iOS
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-},
-  dataRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  colTitulo: {
-    flex: 2.5, // Más espacio para el nombre del ejercicio
-    fontWeight: 'bold',
-    color: '#000',
-    fontSize: 14,
-  },
-  colDatos: {
-    flex: 2.5,
-    color: '#444',
-    fontSize: 14,
-  },
-  colFecha: {
-    flex: 2,
-    color: '#444',
-    fontSize: 14,
-    textAlign: 'right', // Alineado a la derecha como en la imagen
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 10,
-  },
-    
+    botonMargen: {
+        marginTop: 20,
+        marginBottom: 20,
+        width: '100%',
+    }
 });
 
 export default MisResultados;
