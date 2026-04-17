@@ -6,6 +6,7 @@ import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import DateTimePicker  from '@react-native-community/datetimepicker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import BotonRojo from '../componentes/BotonRojo';
 
 const CrearPlanificacion = () => {
      const [showDate, setShowDate] = useState(false);
@@ -64,9 +65,11 @@ const CrearPlanificacion = () => {
                     placeholder='Descripción opcional:'
                     />
 
-                     <TouchableOpacity style={[styles.button, styles.btnRed]}>
-                        <Text style={styles.textWhite}>Guardar Resultado</Text>
-                    </TouchableOpacity>
+                    <BotonRojo 
+                        titulo="Guardar Planificación" 
+                        onPress={() => console.log("Planificación guardada")}
+                        style={styles.botonMargen}
+                    />
                 </View>
             </View>
         </ScrollView>
@@ -138,29 +141,8 @@ titulo_reservas: {
         width: '100%',
         
     },
-    button: {
-        backgroundColor: '#DDDDDD',
-        padding: 10
-    },
-    button: {
-    flex: 0.48, // Para que queden dos por fila con un pequeño espacio
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Sombra suave
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    marginTop: 20
-    },
-    btnRed: {
-    backgroundColor: '#e60000', // Rojo vibrante
-    },
-    textWhite: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 14,
-    },
+    botonMargen: {
+        marginTop: 20,
+        width: '100%', // Ajusta según necesites en esta vista
+    }
 });

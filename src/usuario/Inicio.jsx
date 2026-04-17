@@ -1,10 +1,14 @@
 import React from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Platform, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native'; 
-import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View, Text, SafeAreaView, ScrollView } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
+import BotonRojo from '../componentes/BotonRojo';
+import BotonGris from '../componentes/BotonGris';
+import BotonBlanco from '../componentes/BotonBlanco';
+import CardPantallaInicio from '../componentes/CardPantallaInicio';
+
 
 const Inicio = () => {
     const navigation = useNavigation();
@@ -26,84 +30,64 @@ const Inicio = () => {
                 <Text style={styles.titulo_reservas}>Tus últimas reservas</Text>
 
                 <View style={styles.reservas}>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cards}>12/11/2025</Text>
-                        <Text style={styles.titulo_cards}>06:00</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cards}>07/11/2025</Text>
-                        <Text style={styles.titulo_cards}>06:00</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cancelar}>Cancelar</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cards}>12/11/2025</Text>
-                        <Text style={styles.titulo_cards}>06:00</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cards}>07/11/2025</Text>
-                        <Text style={styles.titulo_cards}>06:00</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cancelar}>Cancelar</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cards}>12/11/2025</Text>
-                        <Text style={styles.titulo_cards}>06:00</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cards}>07/11/2025</Text>
-                        <Text style={styles.titulo_cards}>06:00</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.titulo_cancelar}>Cancelar</Text>
-                    </View>
+                    <CardPantallaInicio fecha="07/11/2025" hora="06:00" />
+                    <CardPantallaInicio fecha="08/11/2025" hora="18:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
                 </View>
 
                 <View style={styles.containerMenu}>
   {/* Fila 1: Planificación */}
                 <View style={styles.row}>
-                    <TouchableOpacity
-                        style={[styles.button, styles.btnRed]}
-                        onPress={() => navigation.navigate('CrearPlanificacion')}
-                    >
-                        <Text style={styles.textWhite}>Crear planificación</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.button, styles.btnRed]}
-                        onPress={() => navigation.navigate('VerPlanificacion')}
-                    >
-                        <Text style={styles.textWhite}>Ver planificación</Text>
-                    </TouchableOpacity>
+                    <BotonRojo 
+                        titulo="Crear Planificación" 
+                        onPress={() => console.log("Crear Planificación")}
+                        style={styles.botonGrid}
+                    />
+                    <BotonRojo 
+                        titulo="Ver Planificación" 
+                        onPress={() => console.log("Ver Planificación")}
+                        style={styles.botonGrid}
+                    />
                 </View>
 
   {/* Fila 2: Perfil y Roles */}
                 <View style={styles.row}>
-                    <TouchableOpacity style={[styles.button, styles.btnGray]}
-                    onPress={() => navigation.navigate('Perfil')}>
-                        <Text style={styles.textWhite}>Editar perfil</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.button, styles.btnGray]} onPress={() => navigation.navigate('GestionarRoles')}>
-                        <Text style={styles.textWhite}>Gestionar roles</Text>
-                    </TouchableOpacity>
+                    <BotonGris 
+                        titulo="Editar Perfil" 
+                        onPress={() => console.log("Editar Perfil")}
+                        style={styles.botonGrid}
+                    />
+                    <BotonGris 
+                        titulo="Gestionar Roles" 
+                        onPress={() => console.log("Gestionar Roles")}
+                        style={styles.botonGrid}
+                    />
                 </View>
 
   {/* Botones de ancho completo */}
-                <TouchableOpacity style={styles.buttonFull}
-                onPress={() => navigation.navigate('RegistrarPago')}>
-                    <Text style={styles.textDark}>Registrar pago</Text>
-                </TouchableOpacity>
+                <BotonBlanco 
+                        titulo="Registrar Pago" 
+                        onPress={() => console.log("Registrar Pago")}
+                        style={styles.botonFull}
+                />
 
-                <TouchableOpacity style={styles.buttonFull}
-                onPress={() => navigation.navigate('HistoricoPagos')}>
-                    <Text style={styles.textDark}>Historial de pagos</Text>
-                </TouchableOpacity>
+                <BotonBlanco 
+                        titulo="Historial de pagos" 
+                        onPress={() => console.log("Historial de Pagos")}
+                        style={styles.botonFull}
+                />
 
-                <TouchableOpacity style={styles.buttonFull}
-                onPress={() => navigation.navigate('Suscripciones')}>
-                    <Text style={styles.textDark}>Suscripciones</Text>
-                </TouchableOpacity>
+                <BotonBlanco 
+                        titulo="Suscripciones" 
+                        onPress={() => console.log("Suscripciones")}
+                        style={styles.botonFull}
+                />
                 </View>
             </View>
         </ScrollView>
@@ -158,93 +142,34 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginTop: 10,
     },
+    containerMenu: {
+        marginTop: -60, // Ajustado para eliminar el espacio con las cards
+    },
     reservas: {
         flexDirection: 'row',       // Alinea en fila
         flexWrap: 'wrap',          // Permite que los elementos bajen a la siguiente línea
         justifyContent: 'flex-start', // Alinea al inicio
-        padding: 5,
+        paddingTop: 10,
     },  
-    card: {
-        backgroundColor: '#fff',
-        width: '30%', 
-        aspectRatio: 1,            
-        margin: '1.5%',            
-        padding: 5,
-        borderRadius: 10,
-        justifyContent: 'center',  
-        alignItems: 'center',      
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-    },
-    titulo_cards: {
-        fontSize: 10,             
-        textAlign: 'center',
-        fontWeight: 'bold',
-    },
+    
     titulo_cancelar: {  
         fontSize: 10,             
         textAlign: 'center',
         fontWeight: 'bold',
         color: '#FF4D4D',
     },
-    button: {
-        alignItems: 'center',
-        backgroundColor: '#DDDDDD',
-        padding: 10,
-        marginTop: -60,
-    },
-    containerMenu: {
-    padding: 15,
-    marginTop: -70,
-  },
-  row: {
+    row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
-  },
-  button: {
-    flex: 0.48, // Para que queden dos por fila con un pequeño espacio
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Sombra suave
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-  },
-  buttonFull: {
-    backgroundColor: '#fff',
-    width: '100%',
-    paddingVertical: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  // Colores específicos
-  btnRed: {
-    backgroundColor: '#e60000', // Rojo vibrante
-  },
-  btnGray: {
-    backgroundColor: '#555e65', // Gris oscuro azulado
-  },
-  // Textos
-  textWhite: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  textDark: {
-    color: '#333',
-    fontWeight: '500',
-    fontSize: 14,
-  }
-    
+    },
+    botonGrid: {
+        flex: 0.48, // Ocupa casi el 50% de la fila para permitir el espacio entre botones
+    },
+    botonFull: {
+        width: '100%',
+        marginBottom: 10,
+    }
 });
 
 export default Inicio;
