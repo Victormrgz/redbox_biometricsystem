@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
 import { StyleSheet, View, Text, SafeAreaView, ScrollView } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
@@ -10,86 +10,102 @@ import BotonBlanco from '../componentes/BotonBlanco';
 import CardPantallaInicio from '../componentes/CardPantallaInicio';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
+import { getUsuario } from '../api/conexion';
 
-const Inicio = () => {
+function Inicio() {
     const navigation = useNavigation();
+
+    const [usuarios, setUsuarios] = useState([]);
+
+    const loadUsuario = async () => {
+        try {
+            const response = await getUsuario();
+            setUsuarios(response.data);
+        } catch (error) {
+            console.error('Error cargando usuario:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadUsuario();
+    }, []);
+
+
     return (
         <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.container}> 
-            <HeaderColor />{/* Vista Inicio */}
-            <View style={styles.content}>
-                <TituloPrincipal titulo="Inicio" />
-                <TituloSecundario titulo="Bienvenido al panel de control" />
-                <TituloSecundario titulo="07/04/2026" />
+            <ScrollView style={styles.container}>
+                <HeaderColor />{/* Vista Inicio */}
+                <View style={styles.content}>
+                    <TituloPrincipal titulo="Hola" />
+                    {Array.isArray(usuarios) && usuarios.map((usuarioItem) => (
+                        <Text key={usuarioItem.id_usuario} style={{ fontSize: 24, fontWeight: 'bold' }}>
+                            {usuarioItem.nombre_usuario}
+                        </Text>
+                    ))}
+                    <TituloSecundario titulo="Bienvenido al panel de control" />
+                    <TituloSecundario titulo="07/04/2026" />
 
-                <View style={styles.IMC}>
-                    <Text style={styles.titulo_IMC}>Tu IMC actual: <Text style={styles.numero}>20.23</Text> <Text style={styles.normal}>(Normal)</Text> </Text>
+                    <View style={styles.IMC}>
+                        <Text style={styles.titulo_IMC}>Tu IMC actual: <Text style={styles.numero}>20.23</Text> <Text style={styles.normal}>(Normal)</Text> </Text>
+                    </View>
+
+                    <Text style={styles.titulo_reservas}>Tus últimas reservas</Text>
+
+                    <View style={styles.reservas}>
+                        <CardPantallaInicio fecha="07/11/2025" hora="06:00" />
+                        <CardPantallaInicio fecha="08/11/2025" hora="18:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                        <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
+                    </View>
+
+                    <View style={styles.containerMenu}>
+                        <View style={styles.row}>
+                            <BotonRojo
+                                titulo="Crear Planificación"
+                                onPress={() => navigation.navigate('CrearPlanificacion')}
+                                style={styles.botonGrid} />
+                            <BotonRojo
+                                titulo="Ver Planificación"
+                                onPress={() => navigation.navigate('VerPlanificacion')}
+                                style={styles.botonGrid} />
+                        </View>
+
+                        <View style={styles.row}>{/* Fila 2: Perfil y Roles */}
+                            <BotonGris
+                                titulo="Editar Perfil"
+                                onPress={() => navigation.navigate('Perfil')}
+                                style={styles.botonGrid} />
+                            <BotonGris
+                                titulo="Gestionar Roles"
+                                onPress={() => navigation.navigate('GestionarRoles')}
+                                style={styles.botonGrid} />
+                        </View>
+
+                        <BotonBlanco
+                            titulo="Registrar Pago"
+                            onPress={() => console.log("Registrar Pago")}
+                            style={styles.botonFull} />
+
+                        <BotonBlanco
+                            titulo="Historial de pagos"
+                            onPress={() => console.log("Historial de Pagos")}
+                            style={styles.botonFull} />
+
+                        <BotonBlanco
+                            titulo="Suscripciones"
+                            onPress={() => console.log("Suscripciones")}
+                            style={styles.botonFull} />
+                    </View>
                 </View>
-
-                <Text style={styles.titulo_reservas}>Tus últimas reservas</Text>
-
-                <View style={styles.reservas}>
-                    <CardPantallaInicio fecha="07/11/2025" hora="06:00" />
-                    <CardPantallaInicio fecha="08/11/2025" hora="18:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                    <CardPantallaInicio fecha="09/11/2025" hora="12:00" />
-                </View>
-
-                <View style={styles.containerMenu}>
-                <View style={styles.row}>
-                    <BotonRojo 
-                        titulo="Crear Planificación" 
-                        onPress={() => navigation.navigate('CrearPlanificacion')}
-                        style={styles.botonGrid}
-                    />
-                    <BotonRojo 
-                        titulo="Ver Planificación" 
-                        onPress={() => navigation.navigate('VerPlanificacion')}
-                        style={styles.botonGrid}
-                    />
-                </View>
-
-                <View style={styles.row}>{/* Fila 2: Perfil y Roles */}
-                    <BotonGris 
-                        titulo="Editar Perfil" 
-                        onPress={() => navigation.navigate('Perfil')}
-                        style={styles.botonGrid}
-                    />
-                    <BotonGris 
-                        titulo="Gestionar Roles" 
-                        onPress={() => navigation.navigate('GestionarRoles')}
-                        style={styles.botonGrid}
-                    />
-                </View>
-
-                <BotonBlanco 
-                        titulo="Registrar Pago" 
-                        onPress={() => console.log("Registrar Pago")}
-                        style={styles.botonFull}
-                />
-
-                <BotonBlanco 
-                        titulo="Historial de pagos" 
-                        onPress={() => console.log("Historial de Pagos")}
-                        style={styles.botonFull}
-                />
-
-                <BotonBlanco 
-                        titulo="Suscripciones" 
-                        onPress={() => console.log("Suscripciones")}
-                        style={styles.botonFull}
-                />
-                </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
         </SafeAreaView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     safeArea: {
