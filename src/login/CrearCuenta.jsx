@@ -40,6 +40,10 @@ const CrearCuenta = () => {
     navigation.navigate('Inicio');
   };
 
+  const handleLogin = () => {
+    navigation.navigate('IniciarSesion');
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
     <ScrollView >
@@ -184,7 +188,7 @@ const CrearCuenta = () => {
         />
         <BotonRojo titulo="CREAR CUENTA" onPress={handleSubmit}  />
         <View style={{ alignItems: 'center', marginTop: 16 }}>
-          <Text>¿Ya tienes cuenta? <Text style={{ color: '#b71c1c', textDecorationLine: 'underline' }}>Inicia Sesión</Text></Text>
+          <Text>¿Ya tienes cuenta? <TouchableOpacity onPress={handleLogin}><Text style={styles.footerLink}>Iniciar Sesion</Text></TouchableOpacity></Text>
         </View>
       </View>
     </ScrollView>
@@ -260,5 +264,11 @@ const styles = StyleSheet.create({
     generoTxtActivo: {
     color: '#fff',
     fontWeight: 'bold',
+    },
+    footerLink: {
+        color: '#b71c1c',
+        textDecorationLine: 'underline',
+        fontSize: 13,
+        marginBottom: -3,
     },
 });
