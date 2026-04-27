@@ -32,16 +32,21 @@ const CrearCuenta = ({ route }) => {
         genero: '',
         invitacion: '',
     });
+    const [errors, setErrors] = useState({});
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const handleChange = (name, value) => {
         setForm({ ...form, [name]: value });
+        // Limpiar el error del campo cuando el usuario empieza a escribir
+        if (errors[name]) setErrors({ ...errors, [name]: null });
     };
 
+    // Cuando el usuario cambia un campo, limpiamos el error asociado a ese campo
     const handleDateChange = (event, selectedDate) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate) {
             setForm({ ...form, nacimiento: selectedDate });
+            if (errors.nacimiento) setErrors({ ...errors, nacimiento: null });
         }
     };
 
@@ -56,23 +61,103 @@ const CrearCuenta = ({ route }) => {
         return `${year}-${month}-${day}`;
     };
 
+    const validateForm = () => {
+        let newErrors = {};
+        let isValid = true;
+
+        // Primer Nombre
+        if (!form.primerNombre.trim()) {
+            newErrors.primerNombre = 'El primer nombre es obligatorio.';
+            isValid = false;
+        } else if (form.primerNombre.trim().length < 2) {
+            newErrors.primerNombre = 'El primer nombre debe tener al menos 2 caracteres.';
+            isValid = false;
+        }
+
+        // Primer Apellido
+        if (!form.primerApellido.trim()) {
+            newErrors.primerApellido = 'El primer apellido es obligatorio.';
+            isValid = false;
+        } else if (form.primerApellido.trim().length < 2) {
+            newErrors.primerApellido = 'El primer apellido debe tener al menos 2 caracteres.';
+            isValid = false;
+        }
+
+        // Cédula
+        if (!form.cedula.trim()) {
+            newErrors.cedula = 'La cédula es obligatoria.';
+            isValid = false;
+        } else if (!/^\d{10}$/.test(form.cedula.trim())) {
+            newErrors.cedula = 'La cédula debe tener 10 dígitos numéricos.';
+            isValid = false;
+        }
+
+        // Correo electrónico
+        if (!form.correo.trim()) {
+            newErrors.correo = 'El correo electrónico es obligatorio.';
+            isValid = false;
+        } else if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(form.correo.trim())) {
+            newErrors.correo = 'El formato del correo electrónico no es válido.';
+            isValid = false;
+        }
+
+        // Contraseña
+        if (!form.contrasena) {
+            newErrors.contrasena = 'La contraseña es obligatoria.';
+            isValid = false;
+        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/.test(form.contrasena)) {
+            newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.';
+            isValid = false;
+        }
+
+        // Confirmar Contraseña
+        if (!form.contrasena2) {
+            newErrors.contrasena2 = 'Debes confirmar la contraseña.';
+            isValid = false;
+        } else if (form.contrasena !== form.contrasena2) {
+            newErrors.contrasena2 = 'Las contraseñas no coinciden.';
+            isValid = false;
+        }
+
+        // Teléfono
+        if (!form.telefono.trim()) {
+            newErrors.telefono = 'El teléfono es obligatorio.';
+            isValid = false;
+        } else if (!/^\d{11}$/.test(form.telefono.trim())) {
+            newErrors.telefono = 'El teléfono debe tener 11 dígitos numéricos.';
+            isValid = false;
+        }
+
+        // Fecha de Nacimiento
+        if (!form.nacimiento) {
+            newErrors.nacimiento = 'La fecha de nacimiento es obligatoria.';
+            isValid = false;
+        } else {
+            const fechaFormateada = formatFecha(form.nacimiento);
+            if (!fechaFormateada) {
+                newErrors.nacimiento = 'La fecha de nacimiento no es válida.';
+                isValid = false;
+            }
+        }
+
+        // Género
+        if (!form.genero) {
+            newErrors.genero = 'Debes seleccionar un género.';
+            isValid = false;
+        }
+
+        return { newErrors, isValid };
+    };
+
     const handleSubmit = async () => {
-        if (form.contrasena !== form.contrasena2) {
-            Alert.alert('Error', 'Las contraseñas no coinciden');
+        const { newErrors, isValid } = validateForm();
+        setErrors(newErrors);
+
+        if (!isValid) {
+            Alert.alert('Error de validación', 'Por favor completa todos los campos.');
             return;
         }
-
-        if (!form.primerNombre || !form.primerApellido || !form.correo || !form.contrasena || !form.nacimiento || !form.cedula) {
-            Alert.alert('Error', 'Por favor completa todos los campos obligatorios (Nombre, Apellido, Cédula, Correo, Contraseña y Nacimiento)');
-            return;
-        }
-
         const fechaFormateada = formatFecha(form.nacimiento);
-        if (!fechaFormateada) {
-            Alert.alert('Error', 'La fecha de nacimiento no es válida');
-            return;
-        }
-
         setCargando(true);
         try {
             const datosParaEnviar = {
@@ -91,7 +176,7 @@ const CrearCuenta = ({ route }) => {
             await registrarUsuario(datosParaEnviar);
 
             Alert.alert('Éxito', 'Cuenta creada correctamente', [
-                { text: 'OK', onPress: () => setIsAuthenticated(true) } // ← aquí el cambio
+                { text: 'OK', onPress: () => setIsAuthenticated(true) } 
             ]);
         } catch (error) {
             if (error.response) {
@@ -120,11 +205,12 @@ const CrearCuenta = ({ route }) => {
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Primer Nombre</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, errors.primerNombre && styles.inputError]}
                                 placeholder="Primer Nombre"
                                 value={form.primerNombre}
                                 onChangeText={text => handleChange('primerNombre', text)}
                             />
+                            {errors.primerNombre && <Text style={styles.errorText}>{errors.primerNombre}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Segundo Nombre</Text>
@@ -140,11 +226,12 @@ const CrearCuenta = ({ route }) => {
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Primer Apellido</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, errors.primerApellido && styles.inputError]}
                                 placeholder="Primer Apellido"
                                 value={form.primerApellido}
                                 onChangeText={text => handleChange('primerApellido', text)}
                             />
+                            {errors.primerApellido && <Text style={styles.errorText}>{errors.primerApellido}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Segundo Apellido</Text>
@@ -161,44 +248,50 @@ const CrearCuenta = ({ route }) => {
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Cédula</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, errors.cedula && styles.inputError]}
                                 placeholder="Cédula"
                                 value={form.cedula}
                                 onChangeText={text => handleChange('cedula', text)}
+                                keyboardType="numeric"
+                                maxLength={10}
                             />
+                            {errors.cedula && <Text style={styles.errorText}>{errors.cedula}</Text>}
                         </View>
                     </View>
 
                     <Text style={styles.label}>Correo electrónico</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, errors.correo && styles.inputError]}
                         placeholder="Correo electrónico"
                         value={form.correo}
                         onChangeText={text => handleChange('correo', text)}
                         keyboardType="email-address"
                         autoCapitalize="none"
                     />
+                    {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
 
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Contraseña</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, errors.contrasena && styles.inputError]}
                                 placeholder="Contraseña"
                                 value={form.contrasena}
                                 onChangeText={text => handleChange('contrasena', text)}
                                 secureTextEntry
                             />
+                            {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Confirmar contraseña</Text>
                             <TextInput
-                                style={styles.input}
-                                placeholder="Confirmar contraseña"
+                                style={[styles.input, errors.contrasena2 && styles.inputError]}
+                                placeholder="Contraseña"
                                 value={form.contrasena2}
                                 onChangeText={text => handleChange('contrasena2', text)}
                                 secureTextEntry
                             />
+                            {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
                         </View>
                     </View>
 
@@ -206,17 +299,19 @@ const CrearCuenta = ({ route }) => {
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Teléfono</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, errors.telefono && styles.inputError]}
                                 placeholder="Teléfono"
                                 value={form.telefono}
                                 onChangeText={text => handleChange('telefono', text)}
                                 keyboardType="phone-pad"
+                                maxLength={11}
                             />
+                            {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
-                            <Text style={styles.label}>Nacimiento</Text>
+                            <Text style={styles.label}>Fecha de Nacimiento</Text>
                             <TouchableOpacity
-                                style={styles.input}
+                                style={[styles.input, errors.nacimiento && styles.inputError]}
                                 onPress={() => setShowDatePicker(true)}
                             >
                                 <Text style={{ color: form.nacimiento ? '#000' : '#999', fontSize: 16 }}>
@@ -231,12 +326,17 @@ const CrearCuenta = ({ route }) => {
                                     onChange={handleDateChange}
                                 />
                             )}
+                            {errors.nacimiento && <Text style={styles.errorText}>{errors.nacimiento}</Text>}
                         </View>
                     </View>
 
                     <View style={styles.generoContainer}>
                         <Text style={styles.label}>Género</Text>
-                        <View style={styles.generoRow}>
+                        <View style={[
+                            styles.generoRow,
+                            errors.genero && styles.inputError,
+                            errors.genero && { borderRadius: 8, padding: 2 }
+                        ]}>
                             {opcionesGenero.slice(1).map((op) => (
                                 <TouchableOpacity
                                     key={op.value}
@@ -250,6 +350,7 @@ const CrearCuenta = ({ route }) => {
                                 </TouchableOpacity>
                             ))}
                         </View>
+                        {errors.genero && <Text style={styles.errorText}>{errors.genero}</Text>}
                     </View>
 
                     <TextInput
@@ -348,5 +449,15 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline',
         fontSize: 13,
         marginBottom: -3,
+    },
+    inputError: {
+        borderColor: '#e60000', // Rojo para el borde del input con error
+        borderWidth: 1,
+    },
+    errorText: {
+        color: '#e60000', // Rojo para el texto del error
+        fontSize: 12,
+        marginBottom: 4,
+        fontWeight: 'bold',
     },
 });
