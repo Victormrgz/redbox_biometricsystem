@@ -86,8 +86,11 @@ export default function AppNavegar() {
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {!isAuthenticated ? (
                     <>
-                        <Stack.Screen name="IniciarSesion" component={IniciarSesion} />
-                        <Stack.Screen name="CrearCuenta" component={CrearCuenta} />
+                        <Stack.Screen name="IniciarSesion" 
+                            component={IniciarSesion} />
+                        <Stack.Screen name="CrearCuenta" 
+                            component={CrearCuenta}
+                            initialParams={{ setIsAuthenticated }} />
                     </>
                 ) : (
                     <>

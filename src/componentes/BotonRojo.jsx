@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
 /**
  * BotonRojo - Un botón reutilizable con el estilo corporativo rojo.
@@ -7,15 +7,27 @@ import { TouchableOpacity, Text, StyleSheet } from 'react-native';
  * @param {string} titulo - El texto que mostrará el botón.
  * @param {function} onPress - La función que se ejecutará al presionar.
  * @param {object} style - Estilos adicionales para el contenedor (opcional).
+ * @param {boolean} disabled - Para deshabilitar el botón (opcional).
+ * @param {boolean} loading - Para mostrar indicador de carga (opcional).
  */
-const BotonRojo = ({ titulo, onPress, style }) => {
+const BotonRojo = ({ titulo, onPress, style, disabled, loading }) => {
     return (
         <TouchableOpacity 
-            style={[styles.button, styles.btnRed, style]} 
+            style={[
+                styles.button, 
+                styles.btnRed, 
+                disabled && styles.btnDisabled,
+                style
+            ]} 
             onPress={onPress}
             activeOpacity={0.7}
+            disabled={disabled || loading}
         >
-            <Text style={styles.textWhite}>{titulo}</Text>
+            {loading ? (
+                <ActivityIndicator color="#fff" size="small" />
+            ) : (
+                <Text style={styles.textWhite}>{titulo}</Text>
+            )}
         </TouchableOpacity>
     );
 };
@@ -33,6 +45,9 @@ const styles = StyleSheet.create({
     },
     btnRed: {
         backgroundColor: '#e60000',
+    },
+    btnDisabled: {
+        backgroundColor: '#ccc',
     },
     textWhite: {
         color: '#fff',

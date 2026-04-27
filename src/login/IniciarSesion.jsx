@@ -1,21 +1,40 @@
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Platform, Alert } from 'react-native';
 import HeaderColor from '../componentes/HeaderColor';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import BotonRojo from '../componentes/BotonRojo';
 import BotonGris from '../componentes/BotonGris';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
+import { loginUsuario } from '../api/conexion';
 
 const IniciarSesion = () => {
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
+    const [cargando, setCargando] = useState(false);
     const navigation = useNavigation();
 
-    const handleLogin = () => {
-        // Aquí va la lógica de autenticación
-        // navigation.navigate('Inicio');
+    const handleLogin = async () => {
+        if (!correo || !contrasena) {
+            Alert.alert('Error', 'Por favor ingresa correo y contraseña');
+            return;
+        }
+
+        setCargando(true);
+        try {
+            const respuesta = await loginUsuario(correo, contrasena);
+            // Si el login es exitoso, navega al inicio
+            // Aquí puedes guardar el token si tu backend lo retorna
+            Alert.alert('Éxito', 'Bienvenido a REDBOX', [
+                { text: 'OK', onPress: () => navigation.navigate('Main') }
+            ]);
+        } catch (error) {
+            console.error('Error de login:', error);
+            Alert.alert('Error', 'Credenciales incorrectas. Intenta de nuevo.');
+        } finally {
+            setCargando(false);
+        }
     };
 
     const handleRegistro = () => {
@@ -57,7 +76,7 @@ const IniciarSesion = () => {
                         <Text style={styles.link}>Olvidé mi contraseña</Text>
                     </TouchableOpacity>
 
-                    <BotonRojo titulo="INICIAR SESIÓN" onPress={handleLogin} style={{ marginTop: 16 }} />
+                    <BotonRojo titulo="INICIAR SESIÓN" onPress={handleLogin} loading={cargando} disabled={cargando} style={{ marginTop: 16 }} />
 
                     <View style={styles.separadorRow}>
                         <View style={styles.linea} />
