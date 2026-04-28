@@ -5,23 +5,6 @@
 
 Sistema de gestión integral para centros de entrenamiento CrossFit. Esta aplicación permite la administración de atletas, control de pagos, planificación de entrenamientos y gestión de roles.
 
-## 📂 Estructura del Proyecto y comandos a utilizar
-
-Para mantener el código escalable y organizado, el proyecto utiliza una arquitectura **basada en módulos y funcionalidades** dentro del directorio principal `src/`.
-
-```text
-src/
-├── assets/             # Recursos estáticos (Logos de RedBox, Iconos, Imágenes)
-├── components/         # Componentes reutilizables (Botones, Inputs, Cards de Pago)
-├── navigation/         # Lógica de navegación (Drawer, Stacks de Admin y Usuario)
-├── screens/            # Vistas principales divididas por dominio:
-│   ├── auth/           # Pantallas de Login y Registro
-│   ├── user/           # Dashboard del atleta, Perfil y Reservas
-│   ├── training/       # Creación y visualización de WODs/Planificaciones
-│   └── admin/          # Panel de gestión (Roles, Pagos, Invitaciones)
-├── styles/             # Configuración global de temas (Colores RedBox, Tipografías)
-└── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)```##
-
 ## 📂 Para actualizar la rama main con los cambios en nuestra rama:
 
 1) Cambiarnos a la rama maina git checkout main
@@ -56,3 +39,25 @@ https://icons.expo.fyi/Index
 npm install @react-native-community/datetimepicker@8.2.0
 
 https://www.youtube.com/watch?v=AJKWj1AiQLU
+
+## 📂 Almacenar de forma local en el tlfn el token que se crea al registrar un usuario
+
+npx expo install @react-native-async-storage/async-storage
+
+
+## 📂 Estructura del Proyecto y comandos a utilizar
+
+Para mantener el código escalable y organizado, el proyecto utiliza una arquitectura **basada en módulos y funcionalidades** dentro del directorio principal `src/`.
+
+```text
+src/
+├── assets/             # Recursos estáticos (Logos de RedBox, Iconos, Imágenes)
+├── components/         # Componentes reutilizables (Botones, Inputs, Cards de Pago)
+├── navigation/         # Lógica de navegación (Drawer, Stacks de Admin y Usuario)
+├── screens/            # Vistas principales divididas por dominio:
+│   ├── auth/           # Pantallas de Login y Registro
+│   ├── user/           # Dashboard del atleta, Perfil y Reservas
+│   ├── training/       # Creación y visualización de WODs/Planificaciones
+│   └── admin/          # Panel de gestión (Roles, Pagos, Invitaciones)
+├── styles/             # Configuración global de temas (Colores RedBox, Tipografías)
+└── utils/              # Funciones de ayuda (Cálculo de IMC, Formateo de moneda)```##
