@@ -8,34 +8,57 @@ import BotonGris from '../componentes/BotonGris';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { loginUsuario } from '../api/conexion';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const IniciarSesion = () => {
+const IniciarSesion = ({route}) => {
+    const { setIsAuthenticated } = route.params;
+
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [cargando, setCargando] = useState(false);
     const navigation = useNavigation();
 
     const handleLogin = async () => {
-        if (!correo || !contrasena) {
-            Alert.alert('Error', 'Por favor ingresa correo y contraseña');
-            return;
+    // 1. Validación preventiva
+    if (!correo.trim() || !contrasena.trim()) {
+        Alert.alert('Error', 'Por favor ingresa correo y contraseña');
+        return;
+    }
+
+    setCargando(true); // Activar loader
+    
+    try {
+        // Limpiamos los espacios en blanco
+        const emailLimpio = correo.trim().toLowerCase();
+        
+        const credenciales = {
+            email_usuario: emailLimpio,
+            contrasena_usuario: contrasena // No le hagas trim a la contraseña, podría tener espacios válidos
+        };
+
+        console.log("Enviando a Django:", credenciales);
+
+        const respuesta = await loginUsuario(credenciales);
+        
+        // ... resto de tu lógica de guardado ...
+        if (respuesta.token) {
+            await AsyncStorage.setItem('userToken', respuesta.token);
+            await AsyncStorage.setItem('userId', JSON.stringify(respuesta.user.id_usuario));
+            setIsAuthenticated(true);
         }
 
-        setCargando(true);
-        try {
-            const respuesta = await loginUsuario(correo, contrasena);
-            // Si el login es exitoso, navega al inicio
-            // Aquí puedes guardar el token si tu backend lo retorna
-            Alert.alert('Éxito', 'Bienvenido a REDBOX', [
-                { text: 'OK', onPress: () => navigation.navigate('Main') }
-            ]);
-        } catch (error) {
-            console.error('Error de login:', error);
-            Alert.alert('Error', 'Credenciales incorrectas. Intenta de nuevo.');
-        } finally {
-            setCargando(false);
+    } catch (error) {
+        // LOG CLAVE: Aquí veremos qué dice exactamente Django del error 400
+        if (error.response) {
+            console.log("Respuesta de error de Django:", error.response.data);
+            // Esto te dirá si el error es "Email no encontrado" o "Password incorrecto"
         }
-    };
+        Alert.alert('Error', 'Credenciales incorrectas.');
+    } finally {
+        setCargando(false);
+    }
+};
+
 
     const handleRegistro = () => {
         navigation.navigate('CrearCuenta');
@@ -96,6 +119,7 @@ const IniciarSesion = () => {
         </SafeAreaView>
     );
 };
+
 
 export default IniciarSesion;
 

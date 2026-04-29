@@ -7,6 +7,7 @@ import TituloPrincipal from '../componentes/TituloPrincipal';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { registrarUsuario } from '../api/conexion';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
@@ -87,8 +88,8 @@ const CrearCuenta = ({ route }) => {
         if (!form.cedula.trim()) {
             newErrors.cedula = 'La cédula es obligatoria.';
             isValid = false;
-        } else if (!/^\d{10}$/.test(form.cedula.trim())) {
-            newErrors.cedula = 'La cédula debe tener 10 dígitos numéricos.';
+        } else if (!/^\d{08}$/.test(form.cedula.trim())) {
+            newErrors.cedula = 'La cédula debe tener 08 dígitos numéricos.';
             isValid = false;
         }
 
@@ -172,8 +173,16 @@ const CrearCuenta = ({ route }) => {
                 email_usuario: form.correo.trim().toLowerCase(),
                 contrasena_usuario: form.contrasena,
             };
+            
+            // 1. Capturamos la respuesta del servidor
+            const response = await registrarUsuario(datosParaEnviar);
 
-            await registrarUsuario(datosParaEnviar);
+        // 2. Extraemos el token y el ID 
+            const { token, user_id } = response;
+
+        // 3. Guardamos en el almacenamiento persistente del teléfono
+            await AsyncStorage.setItem('userToken', token);
+            await AsyncStorage.setItem('userId', JSON.stringify(user_id));
 
             Alert.alert('Éxito', 'Cuenta creada correctamente', [
                 { text: 'OK', onPress: () => setIsAuthenticated(true) } 
