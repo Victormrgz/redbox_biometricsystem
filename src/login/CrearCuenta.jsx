@@ -7,6 +7,9 @@ import TituloPrincipal from '../componentes/TituloPrincipal';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { registrarUsuario } from '../api/conexion';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AntDesign from '@expo/vector-icons/AntDesign';
+
 
 const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
@@ -87,8 +90,8 @@ const CrearCuenta = ({ route }) => {
         if (!form.cedula.trim()) {
             newErrors.cedula = 'La cédula es obligatoria.';
             isValid = false;
-        } else if (!/^\d{10}$/.test(form.cedula.trim())) {
-            newErrors.cedula = 'La cédula debe tener 10 dígitos numéricos.';
+        } else if (!/^\d{08}$/.test(form.cedula.trim())) {
+            newErrors.cedula = 'La cédula debe tener 08 dígitos numéricos.';
             isValid = false;
         }
 
@@ -149,6 +152,13 @@ const CrearCuenta = ({ route }) => {
         return { newErrors, isValid };
     };
 
+    const [ojoAbierto, setOjoAbierto] = useState(false);
+    const presionarOjo = () => {
+        setOjoAbierto(!ojoAbierto);
+    };
+
+    const [verConfirmar, setVerConfirmar] = useState(false);
+
     const handleSubmit = async () => {
         const { newErrors, isValid } = validateForm();
         setErrors(newErrors);
@@ -172,8 +182,16 @@ const CrearCuenta = ({ route }) => {
                 email_usuario: form.correo.trim().toLowerCase(),
                 contrasena_usuario: form.contrasena,
             };
+            
+            // 1. Capturamos la respuesta del servidor
+            const response = await registrarUsuario(datosParaEnviar);
 
-            await registrarUsuario(datosParaEnviar);
+        // 2. Extraemos el token y el ID 
+            const { token, user_id } = response;
+
+        // 3. Guardamos en el almacenamiento persistente del teléfono
+            await AsyncStorage.setItem('userToken', token);
+            await AsyncStorage.setItem('userId', JSON.stringify(user_id));
 
             Alert.alert('Éxito', 'Cuenta creada correctamente', [
                 { text: 'OK', onPress: () => setIsAuthenticated(true) } 
@@ -273,26 +291,51 @@ const CrearCuenta = ({ route }) => {
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Contraseña</Text>
-                            <TextInput
-                                style={[styles.input, errors.contrasena && styles.inputError]}
-                                placeholder="Contraseña"
-                                value={form.contrasena}
-                                onChangeText={text => handleChange('contrasena', text)}
-                                secureTextEntry
-                            />
+                            <View style = {styles.contenedorInput}>
+                                <TextInput
+                                    style={[styles.input, errors.contrasena && styles.inputError]}
+                                    placeholder="Contraseña"
+                                    value={form.contrasena}
+                                    onChangeText={text => handleChange('contrasena', text)}
+                                    secureTextEntry={!ojoAbierto}
+                                />
+                                
+                                <TouchableOpacity onPress={presionarOjo}>
+                                    <AntDesign 
+                                        // El icono cambia según el estado
+                                        name= "eye-invisible"
+                                        size={24} 
+                                        color={errors.contrasena ? "red" : "black"} 
+                                        style={styles.icono} 
+                                    />
+                                </TouchableOpacity>
+                            </View>
                             {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
-                            <Text style={styles.label}>Confirmar contraseña</Text>
+                        <Text style={styles.label}>Confirmar contraseña</Text>
+                        
+                        <View style={styles.contenedorInput}>
                             <TextInput
                                 style={[styles.input, errors.contrasena2 && styles.inputError]}
                                 placeholder="Contraseña"
                                 value={form.contrasena2}
                                 onChangeText={text => handleChange('contrasena2', text)}
-                                secureTextEntry
+                                secureTextEntry={!verConfirmar} 
                             />
-                            {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
+                            
+                            <TouchableOpacity onPress={() => setVerConfirmar(!verConfirmar)}>
+                                <AntDesign 
+                                    name= "eye-invisible"
+                                    size={24} 
+                                    color={errors.contrasena2 ? "red" : "black"} 
+                                    style={styles.icono} 
+                                />
+                            </TouchableOpacity>
                         </View>
+
+                    {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
+                    </View>
                     </View>
 
                     <View style={styles.row}>
@@ -405,6 +448,15 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         gap: 8,
     },
+    contenedorInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    icono: {
+        flex: 1,
+        marginLeft: -30,
+        paddingTop: 10
+    },
     input: {
         backgroundColor: '#f5f5f5',
         borderRadius: 8,
@@ -413,6 +465,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         height: 48,
         justifyContent: 'center',
+        width: '100%',
     },
     generoContainer: {
         marginBottom: 16,

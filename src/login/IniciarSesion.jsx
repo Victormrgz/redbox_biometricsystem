@@ -8,37 +8,69 @@ import BotonGris from '../componentes/BotonGris';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { loginUsuario } from '../api/conexion';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
-const IniciarSesion = () => {
+const IniciarSesion = ({route}) => {
+    const { setIsAuthenticated } = route.params;
+
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [cargando, setCargando] = useState(false);
     const navigation = useNavigation();
 
     const handleLogin = async () => {
-        if (!correo || !contrasena) {
-            Alert.alert('Error', 'Por favor ingresa correo y contraseña');
-            return;
+    // 1. Validación preventiva
+    if (!correo.trim() || !contrasena.trim()) {
+        Alert.alert('Error', 'Por favor ingresa correo y contraseña');
+        return;
+    }
+
+    setCargando(true); // Activar loader
+    
+    try {
+        // Limpiamos los espacios en blanco
+        const emailLimpio = correo.trim().toLowerCase();
+        
+        const credenciales = {
+            email_usuario: emailLimpio,
+            contrasena_usuario: contrasena // No le hagas trim a la contraseña, podría tener espacios válidos
+        };
+
+        console.log("Enviando a Django:", credenciales);
+
+        const respuesta = await loginUsuario(credenciales);
+        
+        // ... resto de tu lógica de guardado ...
+        if (respuesta.token) {
+            await AsyncStorage.setItem('userToken', respuesta.token);
+            await AsyncStorage.setItem('userId', JSON.stringify(respuesta.user.id_usuario));
+            setIsAuthenticated(true);
         }
 
-        setCargando(true);
-        try {
-            const respuesta = await loginUsuario(correo, contrasena);
-            // Si el login es exitoso, navega al inicio
-            // Aquí puedes guardar el token si tu backend lo retorna
-            Alert.alert('Éxito', 'Bienvenido a REDBOX', [
-                { text: 'OK', onPress: () => navigation.navigate('Main') }
-            ]);
-        } catch (error) {
-            console.error('Error de login:', error);
-            Alert.alert('Error', 'Credenciales incorrectas. Intenta de nuevo.');
-        } finally {
-            setCargando(false);
+    } catch (error) {
+        // LOG CLAVE: Aquí veremos qué dice exactamente Django del error 400
+        if (error.response) {
+            console.log("Respuesta de error de Django:", error.response.data);
+            // Esto te dirá si el error es "Email no encontrado" o "Password incorrecto"
         }
-    };
+        Alert.alert('Error', 'Credenciales incorrectas.');
+    } finally {
+        setCargando(false);
+    }
+};
+
 
     const handleRegistro = () => {
         navigation.navigate('CrearCuenta');
+    };
+
+    // Ver y ocultar la contraseña
+
+    const [verContrasena ,setVerContrasena] = useState(true);
+
+    const mostrarContrasena = () => {
+        setVerContrasena(!verContrasena);
     };
 
     const handleOlvide = () => {
@@ -54,24 +86,37 @@ const IniciarSesion = () => {
                     <Text style={styles.subtitulo}>Por favor, inicia sesión para continuar.</Text>
 
                     <Text style={styles.label}>Correo electrónico</Text>
-                    <TextInput
+                    <View style = {styles.contenedorInput}>
+                        <TextInput
                         style={styles.input}
                         placeholder="ejemplo@correo.com"
                         value={correo}
                         onChangeText={setCorreo}
                         keyboardType="email-address"
                         autoCapitalize="none"
-                    />
-
+                        />
+                    </View>
+                    
+                    
                     <Text style={styles.label}>Contraseña</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="********"
-                        value={contrasena}
-                        onChangeText={setContrasena}
-                        secureTextEntry
-                    />
+                    <View style = {styles.contenedorInput}>
+                        
+                        <TextInput
+                            style={styles.input}
+                            placeholder="********"
+                            value={contrasena}
+                            onChangeText={setContrasena}
+                            secureTextEntry={verContrasena}
+                            
+                        />
 
+                        <TouchableOpacity onPress={mostrarContrasena}>
+                            <AntDesign name="eye-invisible" size={24} color="black" style ={styles.icono} />
+                        </TouchableOpacity>
+                        
+                    </View>
+                    
+                    
                     <TouchableOpacity onPress={handleOlvide}>
                         <Text style={styles.link}>Olvidé mi contraseña</Text>
                     </TouchableOpacity>
@@ -96,6 +141,7 @@ const IniciarSesion = () => {
         </SafeAreaView>
     );
 };
+
 
 export default IniciarSesion;
 
@@ -132,12 +178,23 @@ const styles = StyleSheet.create({
         color: '#333',
         marginLeft: 4,
     },
+    contenedorInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    icono: {
+        flex: 1,
+        marginLeft: -30,
+        paddingTop: 8
+    },
+    
     input: {
         backgroundColor: '#f5f5f5',
         borderRadius: 8,
         padding: Platform.OS === 'ios' ? 14 : 10,
         marginBottom: 12,
         fontSize: 16,
+        flex: 1,
     },
     link: {
         color: '#b71c1c',

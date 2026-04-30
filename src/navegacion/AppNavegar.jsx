@@ -73,6 +73,9 @@ function MyTabs() {
                     headerShown: false,
                 }}
             />
+            
+            
+            
         </Tab.Navigator>
     );
 }
@@ -86,8 +89,11 @@ export default function AppNavegar() {
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {!isAuthenticated ? (
                     <>
-                        <Stack.Screen name="IniciarSesion" 
-                            component={IniciarSesion} />
+                        <Stack.Screen 
+                            name="IniciarSesion" 
+                            component={IniciarSesion} 
+                            initialParams={{ setIsAuthenticated }} 
+                        />
                         <Stack.Screen name="CrearCuenta" 
                             component={CrearCuenta}
                             initialParams={{ setIsAuthenticated }} />
@@ -97,7 +103,11 @@ export default function AppNavegar() {
                         <Stack.Screen name="Main" component={MyTabs} />
                         <Stack.Screen name="CrearPlanificacion" component={CrearPlanificacion} />
                         <Stack.Screen name="VerPlanificacion" component={VerPlanificacion} />
-                        <Stack.Screen name="Perfil" component={Perfil} />
+                        <Stack.Screen 
+                            name="Perfil" 
+                            component={Perfil} 
+                            initialParams={{ setIsAuthenticated }} 
+                        />
                         <Stack.Screen name="GestionarRoles" component={GestionarRoles} />
                         <Stack.Screen name="RegistrarPago" component={RegistrarPago} />
                         <Stack.Screen name="HistoricoPagos" component={HistoricoPagos} />
