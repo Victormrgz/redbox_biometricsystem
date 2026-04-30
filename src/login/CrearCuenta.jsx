@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAreaView, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import HeaderColor from '../componentes/HeaderColor';
@@ -9,7 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { registrarUsuario } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from '@expo/vector-icons/AntDesign';
-
+import { Picker } from '@react-native-picker/picker';
 
 const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
@@ -21,6 +21,8 @@ const opcionesGenero = [
 const CrearCuenta = ({ route }) => {
     const { setIsAuthenticated } = route.params;
 
+    const phoneInputRef = useRef(null);
+
     const [form, setForm] = useState({
         primerNombre: '',
         segundoNombre: '',
@@ -31,6 +33,7 @@ const CrearCuenta = ({ route }) => {
         contrasena: '',
         contrasena2: '',
         telefono: '',
+        codigoTelefono: '↓', 
         nacimiento: '',
         genero: '',
         invitacion: '',
@@ -40,11 +43,9 @@ const CrearCuenta = ({ route }) => {
 
     const handleChange = (name, value) => {
         setForm({ ...form, [name]: value });
-        // Limpiar el error del campo cuando el usuario empieza a escribir
         if (errors[name]) setErrors({ ...errors, [name]: null });
     };
 
-    // Cuando el usuario cambia un campo, limpiamos el error asociado a ese campo
     const handleDateChange = (event, selectedDate) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate) {
@@ -68,95 +69,48 @@ const CrearCuenta = ({ route }) => {
         let newErrors = {};
         let isValid = true;
 
-        // Primer Nombre
-        if (!form.primerNombre.trim()) {
-            newErrors.primerNombre = 'El primer nombre es obligatorio.';
-            isValid = false;
-        } else if (form.primerNombre.trim().length < 2) {
-            newErrors.primerNombre = 'El primer nombre debe tener al menos 2 caracteres.';
-            isValid = false;
-        }
-
-        // Primer Apellido
-        if (!form.primerApellido.trim()) {
-            newErrors.primerApellido = 'El primer apellido es obligatorio.';
-            isValid = false;
-        } else if (form.primerApellido.trim().length < 2) {
-            newErrors.primerApellido = 'El primer apellido debe tener al menos 2 caracteres.';
-            isValid = false;
-        }
-
-        // Cédula
+        // Validaciones de texto (Nombres, Apellidos, Cédula, Correo, Password 
+        if (!form.primerNombre.trim()) { newErrors.primerNombre = 'El primer nombre es obligatorio.'; isValid = false; }
+        if (!form.primerApellido.trim()) { newErrors.primerApellido = 'El primer apellido es obligatorio.'; isValid = false; }
+        
         if (!form.cedula.trim()) {
             newErrors.cedula = 'La cédula es obligatoria.';
             isValid = false;
-        } else if (!/^\d{08}$/.test(form.cedula.trim())) {
-            newErrors.cedula = 'La cédula debe tener 08 dígitos numéricos.';
+        } else if (!/^\d{1,8}$/.test(form.cedula.trim())) { 
+            newErrors.cedula = 'La cédula debe tener máximo 8 dígitos.';
             isValid = false;
         }
 
-        // Correo electrónico
-        if (!form.correo.trim()) {
-            newErrors.correo = 'El correo electrónico es obligatorio.';
-            isValid = false;
-        } else if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(form.correo.trim())) {
-            newErrors.correo = 'El formato del correo electrónico no es válido.';
-            isValid = false;
+        if (!form.correo.trim()) { newErrors.correo = 'El correo es obligatorio.'; isValid = false; }
+        
+        if (!form.contrasena) { 
+            newErrors.contrasena = 'La contraseña es obligatoria.'; 
+            isValid = false; 
         }
 
-        // Contraseña
-        if (!form.contrasena) {
-            newErrors.contrasena = 'La contraseña es obligatoria.';
-            isValid = false;
-        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/.test(form.contrasena)) {
-            newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.';
-            isValid = false;
-        }
-
-        // Confirmar Contraseña
-        if (!form.contrasena2) {
-            newErrors.contrasena2 = 'Debes confirmar la contraseña.';
-            isValid = false;
-        } else if (form.contrasena !== form.contrasena2) {
+        if (form.contrasena !== form.contrasena2) {
             newErrors.contrasena2 = 'Las contraseñas no coinciden.';
             isValid = false;
         }
 
-        // Teléfono
-        if (!form.telefono.trim()) {
-            newErrors.telefono = 'El teléfono es obligatorio.';
+        // Ejecutar validación de teléfono
+        const numeroLimpio = form.telefono.trim();
+        if (!numeroLimpio) {
+            newErrors.telefono = 'El número es obligatorio.';
             isValid = false;
-        } else if (!/^\d{11}$/.test(form.telefono.trim())) {
-            newErrors.telefono = 'El teléfono debe tener 11 dígitos numéricos.';
+        } else if (!/^\d{7}$/.test(numeroLimpio)) {
+            newErrors.telefono = 'El número debe tener 7 dígitos.';
             isValid = false;
         }
 
-        // Fecha de Nacimiento
-        if (!form.nacimiento) {
-            newErrors.nacimiento = 'La fecha de nacimiento es obligatoria.';
-            isValid = false;
-        } else {
-            const fechaFormateada = formatFecha(form.nacimiento);
-            if (!fechaFormateada) {
-                newErrors.nacimiento = 'La fecha de nacimiento no es válida.';
-                isValid = false;
-            }
-        }
-
-        // Género
-        if (!form.genero) {
-            newErrors.genero = 'Debes seleccionar un género.';
-            isValid = false;
-        }
+        if (!form.nacimiento) { newErrors.nacimiento = 'La fecha es obligatoria.'; isValid = false; }
+        if (!form.genero) { newErrors.genero = 'Selecciona un género.'; isValid = false; }
 
         return { newErrors, isValid };
     };
 
     const [ojoAbierto, setOjoAbierto] = useState(false);
-    const presionarOjo = () => {
-        setOjoAbierto(!ojoAbierto);
-    };
-
+    const presionarOjo = () => { setOjoAbierto(!ojoAbierto); };
     const [verConfirmar, setVerConfirmar] = useState(false);
 
     const handleSubmit = async () => {
@@ -164,11 +118,13 @@ const CrearCuenta = ({ route }) => {
         setErrors(newErrors);
 
         if (!isValid) {
-            Alert.alert('Error de validación', 'Por favor completa todos los campos.');
+            Alert.alert('Error de validación', 'Por favor completa todos los campos correctamente.');
             return;
         }
+
         const fechaFormateada = formatFecha(form.nacimiento);
         setCargando(true);
+
         try {
             const datosParaEnviar = {
                 pnombre_usuario: form.primerNombre.trim(),
@@ -176,20 +132,16 @@ const CrearCuenta = ({ route }) => {
                 papellido_usuario: form.primerApellido.trim(),
                 sapellido_usuario: form.segundoApellido?.trim() || '',
                 cedula_usuario: form.cedula.trim(),
-                telefono_usuario: form.telefono.trim(),
+                telefono_usuario: `${form.codigoTelefono}${form.telefono.trim()}`,
                 fecha_nacimiento_usuario: fechaFormateada,
                 genero_usuario: form.genero,
                 email_usuario: form.correo.trim().toLowerCase(),
                 contrasena_usuario: form.contrasena,
             };
             
-            // 1. Capturamos la respuesta del servidor
             const response = await registrarUsuario(datosParaEnviar);
-
-        // 2. Extraemos el token y el ID 
             const { token, user_id } = response;
 
-        // 3. Guardamos en el almacenamiento persistente del teléfono
             await AsyncStorage.setItem('userToken', token);
             await AsyncStorage.setItem('userId', JSON.stringify(user_id));
 
@@ -197,12 +149,8 @@ const CrearCuenta = ({ route }) => {
                 { text: 'OK', onPress: () => setIsAuthenticated(true) } 
             ]);
         } catch (error) {
-            if (error.response) {
-                console.log("DETALLE DEL ERROR:", error.response.data);
-                Alert.alert('Error de validación', JSON.stringify(error.response.data));
-            } else {
-                console.error('Error de red:', error.message);
-            }
+            const errorMsg = error.response?.data?.message || 'Error al conectar con el servidor';
+            Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Datos inválidos');
         } finally {
             setCargando(false);
         }
@@ -340,17 +288,49 @@ const CrearCuenta = ({ route }) => {
 
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
-                            <Text style={styles.label}>Teléfono</Text>
+                        <Text style={styles.label}>Teléfono</Text>
+                        
+                        <View style={styles.filaTelefono}>
+                            
+                            <View style={[styles.contenedorPicker, errors.telefono && styles.inputErrorBorder]}>
+                                <Text style={styles.textoCodigo}>{form.codigoTelefono}</Text>
+                                <Picker
+                                    mode="dropdown"
+                                    selectedValue={form.codigoTelefono}
+                                    onValueChange={(itemValue) => {
+                                        handleChange('codigoTelefono', itemValue);
+                                        phoneInputRef.current?.focus();
+                                    }}
+                                    style={styles.picker}
+                                >
+                                    <Picker.Item label="0414" value="0414" />
+                                    <Picker.Item label="0424" value="0424" />
+                                    <Picker.Item label="0412" value="0412" />
+                                    <Picker.Item label="0416" value="0416" />
+                                    <Picker.Item label="0426" value="0426" />
+                                </Picker>
+                            </View>
+
+                            
                             <TextInput
-                                style={[styles.input, errors.telefono && styles.inputError]}
-                                placeholder="Teléfono"
+                                ref={phoneInputRef}
+                                style={[styles.inputTelefono, errors.telefono && styles.inputErrorBorder]}
+                                placeholder="1234567"
+                                keyboardType="numeric"
+                                maxLength={7}
                                 value={form.telefono}
-                                onChangeText={text => handleChange('telefono', text)}
-                                keyboardType="phone-pad"
-                                maxLength={11}
+                                onChangeText={(text) => {
+                                    // Solo permite números
+                                    const cleaned = text.replace(/[^0-9]/g, '');
+                                    handleChange('telefono', cleaned); // Usar handleChange para limpiar el error
+                                }}
                             />
-                            {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
                         </View>
+                        
+                        {/* Mensaje de error debajo de ambos */}
+                        {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
+                        </View>
+                    
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Fecha de Nacimiento</Text>
                             <TouchableOpacity
@@ -466,6 +446,49 @@ const styles = StyleSheet.create({
         height: 48,
         justifyContent: 'center',
         width: '100%',
+    },
+    filaTelefono: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    contenedorPicker: {
+        width: '35%',
+        height: 50,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    textoCodigo: {
+        fontSize: 16,
+        color: '#000',
+    },
+    picker: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 0, // El picker es invisible pero funcional al tacto
+        backgroundColor: 'transparent',
+    },
+    inputTelefono: {
+        width: '62%',
+        height: 50,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        color: '#000',
+    },
+    inputErrorBorder: {
+        borderWidth: 1,
+        borderColor: 'red',
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 12,
+        marginTop: 5,
     },
     generoContainer: {
         marginBottom: 16,
