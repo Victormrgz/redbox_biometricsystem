@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Text, SafeAreaView, ScrollView } from 'react-native'; 
+import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
@@ -10,25 +10,44 @@ import BotonBlanco from '../componentes/BotonBlanco';
 import CardPantallaInicio from '../componentes/CardPantallaInicio';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
-import { getUsuario } from '../api/conexion';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUsuarioById } from '../api/conexion';
+
 
 function Inicio() {
     const navigation = useNavigation();
+    const [nombreUsuario, setNombreUsuario] = useState('');
+    const [cargando, setCargando] = useState(true);
 
-    const [usuarios, setUsuarios] = useState([]);
-
-    const loadUsuario = async () => {
-        try {
-            const response = await getUsuario();
-            setUsuarios(response.data);
-        } catch (error) {
-            console.error('Error cargando usuario:', error);
-        }
-    };
-
+    //funcion para obtener el nombre del usuario registrado
     useEffect(() => {
-        loadUsuario();
+        const cargarDatosUsuario = async () => {
+            try {
+                // 1. Obtener el ID que guardamos al iniciar sesión
+                const idGuardado = await AsyncStorage.getItem('userId');
+                
+                if (idGuardado) {
+                    // 2. Llamar a la API
+                    const datos = await getUsuarioById(JSON.parse(idGuardado));
+                    // 3. Guardar el nombre en el estado (asumiendo que el campo se llama pnombre_usuario)
+                    setNombreUsuario(datos.pnombre_usuario);
+                }
+            } catch (error) {
+                console.error("Error al traer datos del usuario:", error);
+            } finally {
+                setCargando(false);
+            }
+        };
+
+        cargarDatosUsuario();
     }, []);
+
+    // funcion para obtener la fecha actual 
+    const fecha = new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
 
 
     return (
@@ -36,14 +55,14 @@ function Inicio() {
             <ScrollView style={styles.container}>
                 <HeaderColor />{/* Vista Inicio */}
                 <View style={styles.content}>
-                    <TituloPrincipal titulo="Hola" />
-                    {Array.isArray(usuarios) && usuarios.map((usuarioItem) => (
-                        <Text key={usuarioItem.id_usuario} style={{ fontSize: 24, fontWeight: 'bold' }}>
-                            {usuarioItem.nombre_usuario}
-                        </Text>
-                    ))}
+                    {cargando ? (
+                        <ActivityIndicator color="red" />
+                    ) : (
+                        <TituloPrincipal titulo={`Hola ${nombreUsuario}`} />
+                    )}
+
                     <TituloSecundario titulo="Bienvenido al panel de control" />
-                    <TituloSecundario titulo="07/04/2026" />
+                    <TituloSecundario titulo={fecha} />
 
                     <View style={styles.IMC}>
                         <Text style={styles.titulo_IMC}>Tu IMC actual: <Text style={styles.numero}>20.23</Text> <Text style={styles.normal}>(Normal)</Text> </Text>

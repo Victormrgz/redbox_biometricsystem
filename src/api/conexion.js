@@ -6,7 +6,12 @@ const redBoxApi = axios.create({
 
 // Usuarios
 export const getUsuarios = () => redBoxApi.get('/usuarios');
-export const getUsuario = () => getUsuarios();
+
+// Obtener un usuario por ID
+export const getUsuarioById = async (id) => {
+    const respuesta = await redBoxApi.get(`/usuarios/${id}/`);
+    return respuesta.data;
+};
 
 // Registro de usuario
 export const registrarUsuario = async (datos) => {

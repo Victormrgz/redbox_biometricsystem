@@ -46,12 +46,27 @@ const CrearCuenta = ({ route }) => {
         if (errors[name]) setErrors({ ...errors, [name]: null });
     };
 
+    // validar la fecha de nacimiento
+    const validateNacimiento = (date) => {
+        if (!date) {
+            return 'La fecha es obligatoria.';
+        }
+        const hoy = new Date();
+        const fechaMinima = new Date(hoy.getFullYear() - 15, hoy.getMonth(), hoy.getDate());
+        if (date > fechaMinima) {
+            return 'Debes tener al menos 15 años.';
+        }
+        return null; // No hay error
+    };
+
     const handleDateChange = (event, selectedDate) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate) {
-            setForm({ ...form, nacimiento: selectedDate });
-            if (errors.nacimiento) setErrors({ ...errors, nacimiento: null });
+            const error = validateNacimiento(selectedDate);
+            setErrors(prevErrors => ({ ...prevErrors, nacimiento: error }));
+            setForm(prevForm => ({ ...prevForm, nacimiento: selectedDate }));
         }
+        // Si el usuario cancela el DatePicker (selectedDate es undefined), el error se mantiene o se limpia si ya no aplica.
     };
 
     const navigation = useNavigation();
@@ -103,7 +118,11 @@ const CrearCuenta = ({ route }) => {
             isValid = false;
         }
 
-        if (!form.nacimiento) { newErrors.nacimiento = 'La fecha es obligatoria.'; isValid = false; }
+        const nacimientoError = validateNacimiento(form.nacimiento);
+        if (nacimientoError) {
+            newErrors.nacimiento = nacimientoError;
+            isValid = false;
+        }
         if (!form.genero) { newErrors.genero = 'Selecciona un género.'; isValid = false; }
 
         return { newErrors, isValid };
