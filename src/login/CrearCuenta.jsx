@@ -8,6 +8,8 @@ import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { registrarUsuario } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AntDesign from '@expo/vector-icons/AntDesign';
+
 
 const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
@@ -150,6 +152,13 @@ const CrearCuenta = ({ route }) => {
         return { newErrors, isValid };
     };
 
+    const [ojoAbierto, setOjoAbierto] = useState(false);
+    const presionarOjo = () => {
+        setOjoAbierto(!ojoAbierto);
+    };
+
+    const [verConfirmar, setVerConfirmar] = useState(false);
+
     const handleSubmit = async () => {
         const { newErrors, isValid } = validateForm();
         setErrors(newErrors);
@@ -282,26 +291,51 @@ const CrearCuenta = ({ route }) => {
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Contraseña</Text>
-                            <TextInput
-                                style={[styles.input, errors.contrasena && styles.inputError]}
-                                placeholder="Contraseña"
-                                value={form.contrasena}
-                                onChangeText={text => handleChange('contrasena', text)}
-                                secureTextEntry
-                            />
+                            <View style = {styles.contenedorInput}>
+                                <TextInput
+                                    style={[styles.input, errors.contrasena && styles.inputError]}
+                                    placeholder="Contraseña"
+                                    value={form.contrasena}
+                                    onChangeText={text => handleChange('contrasena', text)}
+                                    secureTextEntry={!ojoAbierto}
+                                />
+                                
+                                <TouchableOpacity onPress={presionarOjo}>
+                                    <AntDesign 
+                                        // El icono cambia según el estado
+                                        name= "eye-invisible"
+                                        size={24} 
+                                        color={errors.contrasena ? "red" : "black"} 
+                                        style={styles.icono} 
+                                    />
+                                </TouchableOpacity>
+                            </View>
                             {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
-                            <Text style={styles.label}>Confirmar contraseña</Text>
+                        <Text style={styles.label}>Confirmar contraseña</Text>
+                        
+                        <View style={styles.contenedorInput}>
                             <TextInput
                                 style={[styles.input, errors.contrasena2 && styles.inputError]}
                                 placeholder="Contraseña"
                                 value={form.contrasena2}
                                 onChangeText={text => handleChange('contrasena2', text)}
-                                secureTextEntry
+                                secureTextEntry={!verConfirmar} 
                             />
-                            {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
+                            
+                            <TouchableOpacity onPress={() => setVerConfirmar(!verConfirmar)}>
+                                <AntDesign 
+                                    name= "eye-invisible"
+                                    size={24} 
+                                    color={errors.contrasena2 ? "red" : "black"} 
+                                    style={styles.icono} 
+                                />
+                            </TouchableOpacity>
                         </View>
+
+                    {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
+                    </View>
                     </View>
 
                     <View style={styles.row}>
@@ -414,6 +448,15 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         gap: 8,
     },
+    contenedorInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    icono: {
+        flex: 1,
+        marginLeft: -30,
+        paddingTop: 10
+    },
     input: {
         backgroundColor: '#f5f5f5',
         borderRadius: 8,
@@ -422,6 +465,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         height: 48,
         justifyContent: 'center',
+        width: '100%',
     },
     generoContainer: {
         marginBottom: 16,

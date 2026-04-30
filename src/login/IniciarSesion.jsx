@@ -9,6 +9,7 @@ import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { loginUsuario } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const IniciarSesion = ({route}) => {
     const { setIsAuthenticated } = route.params;
@@ -64,6 +65,14 @@ const IniciarSesion = ({route}) => {
         navigation.navigate('CrearCuenta');
     };
 
+    // Ver y ocultar la contraseña
+
+    const [verContrasena ,setVerContrasena] = useState(true);
+
+    const mostrarContrasena = () => {
+        setVerContrasena(!verContrasena);
+    };
+
     const handleOlvide = () => {
         // Aquí va la lógica para recuperar contraseña
     };
@@ -77,24 +86,37 @@ const IniciarSesion = ({route}) => {
                     <Text style={styles.subtitulo}>Por favor, inicia sesión para continuar.</Text>
 
                     <Text style={styles.label}>Correo electrónico</Text>
-                    <TextInput
+                    <View style = {styles.contenedorInput}>
+                        <TextInput
                         style={styles.input}
                         placeholder="ejemplo@correo.com"
                         value={correo}
                         onChangeText={setCorreo}
                         keyboardType="email-address"
                         autoCapitalize="none"
-                    />
-
+                        />
+                    </View>
+                    
+                    
                     <Text style={styles.label}>Contraseña</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="********"
-                        value={contrasena}
-                        onChangeText={setContrasena}
-                        secureTextEntry
-                    />
+                    <View style = {styles.contenedorInput}>
+                        
+                        <TextInput
+                            style={styles.input}
+                            placeholder="********"
+                            value={contrasena}
+                            onChangeText={setContrasena}
+                            secureTextEntry={verContrasena}
+                            
+                        />
 
+                        <TouchableOpacity onPress={mostrarContrasena}>
+                            <AntDesign name="eye-invisible" size={24} color="black" style ={styles.icono} />
+                        </TouchableOpacity>
+                        
+                    </View>
+                    
+                    
                     <TouchableOpacity onPress={handleOlvide}>
                         <Text style={styles.link}>Olvidé mi contraseña</Text>
                     </TouchableOpacity>
@@ -156,12 +178,23 @@ const styles = StyleSheet.create({
         color: '#333',
         marginLeft: 4,
     },
+    contenedorInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    icono: {
+        flex: 1,
+        marginLeft: -30,
+        paddingTop: 8
+    },
+    
     input: {
         backgroundColor: '#f5f5f5',
         borderRadius: 8,
         padding: Platform.OS === 'ios' ? 14 : 10,
         marginBottom: 12,
         fontSize: 16,
+        flex: 1,
     },
     link: {
         color: '#b71c1c',
