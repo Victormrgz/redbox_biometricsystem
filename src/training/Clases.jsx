@@ -26,21 +26,30 @@ const Clases = () => {
         time: new Date(),
     });
 
-    // Función para manejar la selección de fecha
+    // Formatea la fecha usando el tiempo local de Táchira
+    const formatearFechaParaDjango = (fecha) => {
+        const anio = fecha.getFullYear();
+        const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+        const dia = fecha.getDate().toString().padStart(2, '0');
+        return `${anio}-${mes}-${dia}`; // Retorna "2026-05-13" estrictamente
+    };
+
     const onChangeDate = (event, selectedDate) => {
         setShowDate(false);
         if (selectedDate) {
-            setFormData({ ...formData, date: selectedDate });
+            // Creamos una nueva copia y le fijamos la hora a mitad del día
+            const fechaLocal = new Date(selectedDate);
+            fechaLocal.setHours(12, 0, 0, 0); 
+            
+            setFormData({ ...formData, date: fechaLocal });
         }
     };
 
-    // Función para manejar la selección de hora
     const onChangeTime = (event, selectedTime) => {
         setShowTime(false);
         if (selectedTime) {
             const ahora = new Date();
-            
-            // Validación: Si la fecha seleccionada es HOY, la hora no puede ser menor a la actual
+            // Validación de hora si es hoy
             if (formData.date.toDateString() === ahora.toDateString()) {
                 if (selectedTime.getTime() < ahora.getTime()) {
                     Alert.alert("Hora inválida", "No puedes seleccionar una hora que ya pasó.");
@@ -52,73 +61,65 @@ const Clases = () => {
     };
 
     const handleReservar = async () => {
-    // 1. Validaciones previas de la UI
-    if (!formData.date || !formData.time) {
-        Alert.alert("Atención", "Por favor, selecciona una fecha y una hora.");
-        return;
-    }
-
-    setCargando(true); // Activar indicador de carga si tienes el estado
-
-    try {
-        // 2. Obtener el ID del usuario desde el almacenamiento local
-        const userId = await AsyncStorage.getItem('userId');
-
-        if (!userId) {
-            Alert.alert("Error de sesión", "No se encontró el ID del usuario. Intenta iniciar sesión de nuevo.");
-            navigation.navigate('Login'); 
+        if (!formData.date || !formData.time) {
+            Alert.alert("Atención", "Por favor, selecciona una fecha y una hora.");
             return;
         }
 
-        // 3. Preparar los datos según tu modelo de Django
-        // Nota: Calculamos una hora de fin (ej. 1 hora después) para cumplir con el modelo
-        const horaInicio = formData.time;
-        const horaFin = new Date(horaInicio.getTime() + 60 * 60 * 1000); // +1 hora
+        setCargando(true);
 
-        const datosParaEnviar = {
-            id_usuario: parseInt(userId), 
-            // Usamos split('T')[0] si tu backend cambió a DateField, 
-            // o toISOString() si se mantuvo como DateTimeField
-            fecha_clase: formData.date.toISOString().split('T')[0], 
-            
-            hora_inicio_clase: horaInicio.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: false 
-            }),
-            
-            hora_fin_clase: horaFin.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: false 
-            }),
-            
-            cupo_maximo_clase: 20,
-            descripcion_clase: "Entrenamiento de CrossFit" // O un campo de texto si lo tienes en el front
-        };
+        try {
+            const userId = await AsyncStorage.getItem('userId');
 
-        // 4. Llamada a la API
-        const respuesta = await crearClases(datosParaEnviar);
-        
-        console.log("Respuesta exitosa:", respuesta);
-        Alert.alert("¡Reserva Exitosa!", "Tu clase ha sido agendada correctamente.");
-        
-        // Opcional: Limpiar el formulario o navegar a otra pantalla
-        // navigation.goBack();
+            if (!userId) {
+                Alert.alert("Error de sesión", "No se encontró el ID del usuario.");
+                navigation.navigate('Login'); 
+                return;
+            }
 
-    } catch (error) {
-        // Manejo detallado de errores del servidor
-        if (error.response) {
-            console.log("Detalles del error (Django):", error.response.data);
-            Alert.alert("Error en el servidor", JSON.stringify(error.response.data));
-        } else {
-            console.log("Error de conexión:", error.message);
-            Alert.alert("Error", "No se pudo conectar con el servidor. Verifica tu red.");
+            const horaInicio = formData.time;
+            const horaFin = new Date(horaInicio.getTime() + 60 * 60 * 1000); 
+
+            const datosParaEnviar = {
+                id_usuario: parseInt(userId), 
+                
+                fecha_clase: formatearFechaParaDjango(formData.date), 
+                
+                hora_inicio_clase: horaInicio.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    hour12: false 
+                }),
+                
+                hora_fin_clase: horaFin.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    hour12: false 
+                }),
+                
+                cupo_maximo_clase: 20,
+                descripcion_clase: "Entrenamiento de CrossFit"
+            };
+
+            const respuesta = await crearClases(datosParaEnviar);
+            
+            Alert.alert("¡Reserva Exitosa!", "Tu clase ha sido agendada correctamente.", [
+                { 
+                    text: "OK", 
+                    onPress: () => navigation.goBack() // Regresa al Inicio para ver el cambio
+                }
+            ]);
+
+        } catch (error) {
+            if (error.response) {
+                Alert.alert("Error en el servidor", JSON.stringify(error.response.data));
+            } else {
+                Alert.alert("Error", "No se pudo conectar con el servidor.");
+            }
+        } finally {
+            setCargando(false);
         }
-    } finally {
-        setCargando(false); // Desactivar indicador de carga
-    }
-};
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -144,7 +145,7 @@ const Clases = () => {
                                 value={formData.date}
                                 mode="date" 
                                 display='default'
-                                minimumDate={new Date()} // ✅ BLOQUEA FECHAS PASADAS
+                                minimumDate={new Date()} 
                                 onChange={onChangeDate}
                             />
                         )}
