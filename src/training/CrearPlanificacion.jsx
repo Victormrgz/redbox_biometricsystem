@@ -10,7 +10,7 @@ import BotonRojo from '../componentes/BotonRojo';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 
 const CrearPlanificacion = () => {
-     const [showDate, setShowDate] = useState(false);
+    const [showDate, setShowDate] = useState(false);
         const [showTime, setShowTime] = useState(false);
     
         const [formData, setFormData] = useState({
