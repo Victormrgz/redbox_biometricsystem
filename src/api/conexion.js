@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const redBoxApi = axios.create({
+export const redBoxApi = axios.create({
     baseURL: "http://192.168.1.108:8000/api",
 });
 
@@ -20,13 +20,21 @@ export const registrarUsuario = async (datos) => {
 };
 
 // Login
-// En tu archivo de api/conexion.js
 export const loginUsuario = async (credenciales) => {
     const res = await redBoxApi.post('/login/', credenciales);
     return res.data; 
 };
 
+//Crear clases
 export const crearClases = async (datos) => {
     const respuesta = await redBoxApi.post('/clases/', datos);
+    return respuesta.data; 
+};
+
+
+//obtener reservas
+export const getReservasUsuario = async (userId) => {
+
+    const respuesta = await redBoxApi.get(`/clases/?id_usuario=${userId}`);
     return respuesta.data; 
 };
