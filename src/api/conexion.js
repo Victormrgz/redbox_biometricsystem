@@ -31,6 +31,16 @@ export const crearClases = async (datos) => {
     return respuesta.data; 
 };
 
+//Eliminar Clases
+export const cancelarClase = async (claseId) => {
+    try {
+        const response = await api.post(`/clases/${claseId}/cancelar/`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 
 //obtener reservas
 export const getReservasUsuario = async (userId) => {
