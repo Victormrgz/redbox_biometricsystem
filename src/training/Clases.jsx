@@ -31,7 +31,7 @@ const Clases = () => {
         const anio = fecha.getFullYear();
         const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
         const dia = fecha.getDate().toString().padStart(2, '0');
-        return `${anio}-${mes}-${dia}`; // Retorna "2026-05-13" estrictamente
+        return `${anio}-${mes}-${dia}`;
     };
 
     const onChangeDate = (event, selectedDate) => {
@@ -61,65 +61,62 @@ const Clases = () => {
     };
 
     const handleReservar = async () => {
-        if (!formData.date || !formData.time) {
-            Alert.alert("Atención", "Por favor, selecciona una fecha y una hora.");
+    // 1. Validaciones de horario (6 AM a 9 PM)
+    const horaSeleccionada = formData.time.getHours();
+    if (horaSeleccionada < 6 || horaSeleccionada > 21) {
+        Alert.alert("Horario no permitido", "Las clases deben ser entre las 6:00 AM y las 9:00 PM.");
+        return;
+    }
+
+    setCargando(true);
+
+    try {
+        // Recuperamos el ID real de la base de datos (no el celular)
+        const userId = await AsyncStorage.getItem('userId');
+        
+        if (!userId) {
+            Alert.alert("Error", "No se encontró el ID del usuario. Inicia sesión de nuevo.");
             return;
         }
 
-        setCargando(true);
+        // --- CÁLCULO DE LA HORA FIN (1 hora después) ---
+        const horaInicio = new Date(formData.time);
+        const horaFin = new Date(horaInicio.getTime() + (60 * 60 * 1000)); // Sumamos 1 hora en ms
 
-        try {
-            const userId = await AsyncStorage.getItem('userId');
+        // Formateo de horas para Django (HH:MM)
+        const formatoHora = (fecha) => fecha.toLocaleTimeString([], { 
+            hour: '2-digit', minute: '2-digit', hour12: false 
+        });
 
-            if (!userId) {
-                Alert.alert("Error de sesión", "No se encontró el ID del usuario.");
-                navigation.navigate('Login'); 
-                return;
-            }
+        const datosParaEnviar = {
+            id_usuario: parseInt(userId), 
+            fecha_clase: formatearFechaParaDjango(formData.date), 
+            hora_inicio_clase: formatoHora(horaInicio),
+            hora_fin_clase: formatoHora(horaFin), // ✅ Ahora es dinámica
+            cupo_maximo_clase: 20,
+            descripcion_clase: "Entrenamiento de CrossFit"
+        };
 
-            const horaInicio = formData.time;
-            const horaFin = new Date(horaInicio.getTime() + 60 * 60 * 1000); 
+        console.log("Enviando a Django:", datosParaEnviar);
 
-            const datosParaEnviar = {
-                id_usuario: parseInt(userId), 
-                
-                fecha_clase: formatearFechaParaDjango(formData.date), 
-                
-                hora_inicio_clase: horaInicio.toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    hour12: false 
-                }),
-                
-                hora_fin_clase: horaFin.toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    hour12: false 
-                }),
-                
-                cupo_maximo_clase: 20,
-                descripcion_clase: "Entrenamiento de CrossFit"
-            };
+        const respuesta = await crearClases(datosParaEnviar);
+        
+        Alert.alert("¡Éxito!", "Clase creada correctamente. Se descontó 1 crédito.", [
+            { text: "OK", onPress: () => navigation.goBack() }
+        ]);
 
-            const respuesta = await crearClases(datosParaEnviar);
-            
-            Alert.alert("¡Reserva Exitosa!", "Tu clase ha sido agendada correctamente.", [
-                { 
-                    text: "OK", 
-                    onPress: () => navigation.goBack() // Regresa al Inicio para ver el cambio
-                }
-            ]);
+    } catch (error) {
+        console.log("Error completo:", error.response?.data);
+        
+        // Si el error es por duplicado o créditos, vendrá en error.response.data.error
+        const mensajeError = error.response?.data?.error || JSON.stringify(error.response?.data) || 
+        "No se pudo conectar con el servidor.";
 
-        } catch (error) {
-            if (error.response) {
-                Alert.alert("Error en el servidor", JSON.stringify(error.response.data));
-            } else {
-                Alert.alert("Error", "No se pudo conectar con el servidor.");
-            }
-        } finally {
-            setCargando(false);
-        }
-    };
+        Alert.alert("Atención", mensajeError);
+    } finally {
+        setCargando(false);
+    }
+};
 
     return (
         <SafeAreaView style={styles.safeArea}>

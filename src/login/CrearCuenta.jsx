@@ -15,7 +15,7 @@ const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
     { value: 'M', label: 'Hombre' },
     { value: 'F', label: 'Mujer' },
-    { value: 'O', label: 'Otro' },
+    { value: 'Otro', label: 'Otro' },
 ];
 
 const CrearCuenta = ({ route }) => {
