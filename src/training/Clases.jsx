@@ -62,61 +62,84 @@ const Clases = () => {
 
     const handleReservar = async () => {
     // 1. Validaciones de horario (6 AM a 9 PM)
-    const horaSeleccionada = formData.time.getHours();
-    if (horaSeleccionada < 6 || horaSeleccionada > 21) {
-        Alert.alert("Horario no permitido", "Las clases deben ser entre las 6:00 AM y las 9:00 PM.");
-        return;
-    }
-
-    setCargando(true);
-
-    try {
-        // Recuperamos el ID real de la base de datos (no el celular)
-        const userId = await AsyncStorage.getItem('userId');
-        
-        if (!userId) {
-            Alert.alert("Error", "No se encontró el ID del usuario. Inicia sesión de nuevo.");
+        const horaSeleccionada = formData.time.getHours();
+        if (horaSeleccionada < 6 || horaSeleccionada > 21) {
+            Alert.alert("Horario no permitido", "Las clases deben ser entre las 6:00 AM y las 9:00 PM.");
             return;
         }
 
-        // --- CÁLCULO DE LA HORA FIN (1 hora después) ---
-        const horaInicio = new Date(formData.time);
-        const horaFin = new Date(horaInicio.getTime() + (60 * 60 * 1000)); // Sumamos 1 hora en ms
+        setCargando(true);
 
-        // Formateo de horas para Django (HH:MM)
-        const formatoHora = (fecha) => fecha.toLocaleTimeString([], { 
-            hour: '2-digit', minute: '2-digit', hour12: false 
-        });
+        try {
+            // Recuperamos el ID real de la base de datos (no el celular)
+            const userId = await AsyncStorage.getItem('userId');
+            
+            if (!userId) {
+                Alert.alert("Error", "No se encontró el ID del usuario. Inicia sesión de nuevo.");
+                return;
+            }
 
-        const datosParaEnviar = {
-            id_usuario: parseInt(userId), 
-            fecha_clase: formatearFechaParaDjango(formData.date), 
-            hora_inicio_clase: formatoHora(horaInicio),
-            hora_fin_clase: formatoHora(horaFin), // ✅ Ahora es dinámica
-            cupo_maximo_clase: 20,
-            descripcion_clase: "Entrenamiento de CrossFit"
-        };
+            // --- CÁLCULO DE LA HORA FIN (1 hora después) ---
+            const horaInicio = new Date(formData.time);
+            const horaFin = new Date(horaInicio.getTime() + (60 * 60 * 1000)); // Sumamos 1 hora en ms
 
-        console.log("Enviando a Django:", datosParaEnviar);
+            // Formateo de horas para Django (HH:MM)
+            const formatoHora = (fecha) => fecha.toLocaleTimeString([], { 
+                hour: '2-digit', minute: '2-digit', hour12: false 
+            });
 
-        const respuesta = await crearClases(datosParaEnviar);
-        
-        Alert.alert("¡Éxito!", "Clase creada correctamente. Se descontó 1 crédito.", [
-            { text: "OK", onPress: () => navigation.goBack() }
-        ]);
+            const datosParaEnviar = {
+                id_usuario: parseInt(userId), 
+                fecha_clase: formatearFechaParaDjango(formData.date), 
+                hora_inicio_clase: formatoHora(horaInicio),
+                hora_fin_clase: formatoHora(horaFin), // ✅ Ahora es dinámica
+                cupo_maximo_clase: 20,
+                descripcion_clase: "Entrenamiento de CrossFit"
+            };
 
-    } catch (error) {
-        console.log("Error completo:", error.response?.data);
-        
-        // Si el error es por duplicado o créditos, vendrá en error.response.data.error
-        const mensajeError = error.response?.data?.error || JSON.stringify(error.response?.data) || 
-        "No se pudo conectar con el servidor.";
+            console.log("Enviando a Django:", datosParaEnviar);
 
-        Alert.alert("Atención", mensajeError);
-    } finally {
-        setCargando(false);
-    }
-};
+            const respuesta = await crearClases(datosParaEnviar);
+            
+            Alert.alert("¡Éxito!", "Clase creada correctamente. Se descontó 1 crédito.", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
+
+        } catch (error) {
+            console.log("Error completo:", error.response?.data);
+            
+            // Si el error es por duplicado o créditos, vendrá en error.response.data.error
+            const mensajeError = error.response?.data?.error || JSON.stringify(error.response?.data) || 
+            "No se pudo conectar con el servidor.";
+
+            Alert.alert("Atención", mensajeError);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const handleCancelar = () => {
+        Alert.alert(
+            "Cancelar Clase",
+            "¿Estás seguro de que deseas cancelar esta clase? Se te devolverá el crédito.",
+            [
+                { text: "No", style: "cancel" },
+                { 
+                    text: "Sí, cancelar", 
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await cancelarClase(clase.id_clase);
+                            Alert.alert("Éxito", "Clase cancelada correctamente.");
+                            onActualizar(); // Función para refrescar la lista
+                        } catch (error) {
+                            Alert.alert("Error", "No se pudo cancelar la clase.");
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>

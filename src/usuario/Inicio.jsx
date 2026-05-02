@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native'; 
+import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator, Alert } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import { useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -52,6 +52,34 @@ function Inicio() {
         }
     };
 
+    const handleCancelar = (idClase) => {
+        Alert.alert(
+            "Cancelar Reserva",
+            "¿Estás seguro de que quieres cancelar esta clase? Se te devolverá el crédito.",
+            [
+                { text: "No", style: "cancel" },
+                { 
+                    text: "Sí, cancelar", 
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            // Llamamos al método @action 'cancelar' que definiste en el ViewSet
+                            await redBoxApi.post(`/clases/${idClase}/cancelar/`);
+                            
+                            Alert.alert("Éxito", "Clase cancelada correctamente.");
+                            
+                            // Refrescamos la lista de reservas automáticamente
+                            obtenerReservas(); 
+                        } catch (error) {
+                            console.error("Error al cancelar:", error);
+                            Alert.alert("Error", "No se pudo cancelar la clase en este momento.");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     useFocusEffect(
         useCallback(() => {
             obtenerUsuario();
@@ -94,6 +122,8 @@ function Inicio() {
                                     key={index}
                                     fecha={new Date(reserva.fecha_clase).toLocaleDateString('es-ES')} 
                                     hora={reserva.hora_inicio_clase ? reserva.hora_inicio_clase.substring(0, 5) : '--:--'} 
+                                    // 3. PASAMOS LA PROPS
+                                    onCancelar={() => handleCancelar(reserva.id_clase)} 
                                 />
                             ))
                         ) : (
@@ -159,12 +189,12 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     containerMenu: {
-        marginTop: -60, // Ajustado para eliminar el espacio con las cards
+        marginTop: 10, 
     },
     reservas: {
-        flexDirection: 'row',       // Alinea en fila
-        flexWrap: 'wrap',          // Permite que los elementos bajen a la siguiente línea
-        justifyContent: 'flex-start', // Alinea al inicio
+        flexDirection: 'row',       
+        flexWrap: 'wrap',          
+        justifyContent: 'space-between', 
         paddingTop: 10,
     },
     sinReservas: {
@@ -187,7 +217,11 @@ const styles = StyleSheet.create({
     botonFull: {
         width: '100%',
         marginBottom: 10,
-    }
+    },
+    content: {
+        flex: 1,
+        padding: 20,
+    },
 });
 
 export default Inicio;
