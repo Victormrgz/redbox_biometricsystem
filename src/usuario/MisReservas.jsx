@@ -1,43 +1,126 @@
-import React from 'react';
-import { StyleSheet, View, Text, SafeAreaView, ScrollView } from 'react-native'; 
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
 import TituloTerciario from '../componentes/TituloTerciario';
 import CardMisReservas from '../componentes/CardMisReservas';
+import { getUsuarioById, redBoxApi } from '../api/conexion';
+import { useFocusEffect } from '@react-navigation/native';
 
 const MisReservas = () => {
-    // Datos de ejemplo para las tablas
-    const reservasMarzo = [
-        { fecha: '13/03/2026', hora: '10:00', estado: 'Pendiente', accion: 'Cancelar' }
-    ];
+    const [usuario, setUsuario] = useState(null);
+    const [reservasAgrupadas, setReservasAgrupadas] = useState({});
+    const [cargando, setCargando] = useState(true);
 
-    const reservasNoviembre = [
-        { fecha: '12/11/2025', hora: '10:00', estado: 'Pendiente', accion: '' },
-        { fecha: '13/03/2026', hora: '10:00', estado: 'Pendiente', accion: '' },
-        { fecha: '13/03/2026', hora: '10:00', estado: 'Pendiente', accion: '' },
-        { fecha: '13/03/2026', hora: '10:00', estado: 'Pendiente', accion: '' },
-    ];
+    // --- ESTE ES EL CAMBIO CLAVE ---
+    useFocusEffect(
+        useCallback(() => {
+            cargarDatosCompletos();
+        }, [])
+    );
+
+    const obtenerNumeroMes = (nombreMes) => {
+        const meses = {
+            'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
+            'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+        };
+        return meses[nombreMes.toLowerCase()];
+    };
+    const cargarDatosCompletos = async () => {
+        try {
+            const idAlmacenado = await AsyncStorage.getItem('userId');
+            if (!idAlmacenado) return;
+            const idLimpio = JSON.parse(idAlmacenado);
+
+            // Hacemos las peticiones en paralelo para mayor velocidad
+            const [datosUsuario, respClases] = await Promise.all([
+                getUsuarioById(idLimpio),
+                redBoxApi.get(`/clases/?id_usuario=${idLimpio}`)
+            ]);
+
+            // Actualizamos créditos (se verá el cambio si creaste una clase)
+            setUsuario(datosUsuario);
+
+            // Agrupamos las nuevas clases (aparecerá la que acabas de crear)
+            const agrupado = respClases.data.reduce((acc, reserva) => {
+                const fechaObj = new Date(reserva.fecha_clase);
+                const mesAño = fechaObj.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+                const tituloSeccion = mesAño.charAt(0).toUpperCase() + mesAño.slice(1);
+
+                if (!acc[tituloSeccion]) acc[tituloSeccion] = [];
+                
+                acc[tituloSeccion].push({
+                    id_clase: reserva.id_clase,
+                    fecha: fechaObj.toLocaleDateString('es-ES'),
+                    hora: reserva.hora_inicio_clase ? reserva.hora_inicio_clase.substring(0, 5) : '--:--',
+                    estado: 'Confirmada',
+                });
+                return acc;
+            }, {});
+
+            setReservasAgrupadas(agrupado);
+        } catch (error) {
+            console.error("Error al sincronizar datos:", error);
+        } finally {
+            setCargando(false); 
+        }
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.container}> 
-            <HeaderColor />
-            <View style={styles.content}>
-                <TituloPrincipal titulo="Mis Reservas" />
-                <TituloSecundario titulo="Consulta tu historial y resumen mensual de clases." />
-                
-                <Text style={styles.titulo_creditos}>Creditos usados: <Text style={styles.texto_valor}>1</Text></Text>
-                <Text style={styles.titulo_creditos}>Creditos disponibles: <Text style={styles.texto_valor}>23</Text></Text>
-                
-                <TituloTerciario titulo="Marzo 2026" />
-                <CardMisReservas data={reservasMarzo} />
+            <ScrollView style={styles.container}> 
+                <HeaderColor />
+                <View style={styles.content}>
+                    <TituloPrincipal titulo="Mis Reservas" />
+                    <TituloSecundario titulo="Consulta tu historial y resumen mensual de clases." />
+                    
+                    {/* CRÉDITOS REALES DEL USUARIO */}
+                    <View style={styles.contenedorCreditos}>
+                        <Text style={styles.titulo_creditos}>
+                            Créditos usados: <Text style={styles.texto_valor}>
+                                {/* Lógica: Si el plan es de 30, restamos los que tiene */}
+                                {usuario ? (30 - usuario.creditos_usuario) : '...'}
+                            </Text>
+                        </Text>
+                        <Text style={styles.titulo_creditos}>
+                            Créditos disponibles: <Text style={[styles.texto_valor, {color: '#FF4D4D'}]}>
+                                {usuario ? usuario.creditos_usuario : '...'}
+                            </Text>
+                        </Text>
+                    </View>
 
-                <TituloTerciario titulo="Noviembre 2025" />
-                <CardMisReservas data={reservasNoviembre} />
-            </View>
-        </ScrollView>
+                    {cargando ? (
+                    <ActivityIndicator size="large" color="#FF4D4D" style={{ marginTop: 30 }} />
+                ) : (
+                    Object.keys(reservasAgrupadas).length > 0 ? (
+                        // 1. Obtenemos los nombres de los meses
+                        Object.keys(reservasAgrupadas)
+                            // 2. Los ordenamos de forma descendente
+                            .sort((a, b) => {
+                                // Convertimos el título "Mes Año" a un objeto Date para comparar
+                                // Usamos el día 1 de cada mes para la comparación
+                                const dateA = new Date(a.split(' ')[1], obtenerNumeroMes(a.split(' ')[0]));
+                                const dateB = new Date(b.split(' ')[1], obtenerNumeroMes(b.split(' ')[0]));
+                                return dateB - dateA; // Orden descendente (más reciente arriba)
+                            })
+                            // 3. Mapeamos los meses ya ordenados
+                            .map((mes) => (
+                                <View key={mes} style={{ marginBottom: 25 }}>
+                                    <TituloTerciario titulo={mes} />
+                                    <CardMisReservas data={reservasAgrupadas[mes]} />
+                                </View>
+                            ))
+                    ) : (
+                        <View style={styles.vacioContainer}>
+                            <Text style={styles.textoVacio}>No se encontraron reservas en tu historial.</Text>
+                        </View>
+                    )
+                )}
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
 };
@@ -45,7 +128,7 @@ const MisReservas = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff', // O el color de fondo de tu app
+        backgroundColor: '#fff',
         paddingTop: Constants.statusBarHeight,
     },
     container: {
@@ -56,14 +139,33 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
+    contenedorCreditos: {
+        backgroundColor: '#f8f9fa',
+        padding: 15,
+        borderRadius: 12,
+        marginVertical: 15,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF4D4D'
+    },
     titulo_creditos: {
-        fontSize: 20,
+        fontSize: 17,
         fontWeight: 'bold',
-        marginTop: 10,
+        color: '#333',
+        marginBottom: 5,
     },
     texto_valor: {
-        fontSize: 18,
+        fontWeight: 'normal',
         color: '#666',
+    },
+    vacioContainer: {
+        marginTop: 50,
+        alignItems: 'center'
+    },
+    textoVacio: {
+        color: '#999',
+        fontSize: 16,
+        fontStyle: 'italic'
     }
 });
+
 export default MisReservas;
