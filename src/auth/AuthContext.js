@@ -4,16 +4,25 @@ import { getUsuarioById } from '../api/conexion';
 
 export const AuthContext = createContext();
 
+// AuthContext.js
 export const AuthProvider = ({ children }) => {
     const [usuario, setUsuario] = useState(null);
     const [cargandoAuth, setCargandoAuth] = useState(true);
 
-    const actualizarUsuario = async () => {
+    const actualizarUsuario = async (datosDirectos = null) => {
+        if (datosDirectos) {
+            setUsuario(datosDirectos);
+            setCargandoAuth(false);
+            return;
+        }
+
         try {
             const id = await AsyncStorage.getItem('userId');
             if (id) {
                 const datos = await getUsuarioById(JSON.parse(id));
                 setUsuario(datos);
+            } else {
+                setUsuario(null); // Si no hay ID, el usuario es null
             }
         } catch (e) {
             console.error("Error en AuthContext", e);

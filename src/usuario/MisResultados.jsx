@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from 'react-native'; 
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import DateTimePicker  from '@react-native-community/datetimepicker';
@@ -9,9 +9,11 @@ import TituloSecundario from '../componentes/TituloSecundario';
 import TituloTerciario from '../componentes/TituloTerciario';
 import BotonRojo from '../componentes/BotonRojo';
 import CardRecordsPersonales from '../componentes/CardRecordsPersonales';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 const MisResultados = () => {
+    const insets = useSafeAreaInsets();
     const [showDate, setShowDate] = useState(false);
     const [formData, setFormData] = useState({
         date: '',
@@ -25,7 +27,7 @@ const MisResultados = () => {
     ];
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <ScrollView style={styles.container}> 
             <HeaderColor />
 
@@ -116,16 +118,14 @@ const MisResultados = () => {
             
             
         </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff', // O el color de fondo de tu app
-        // En Android, SafeAreaView a veces necesita un padding manual
-        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#fff', 
     },
     container: {
         flex: 1,
