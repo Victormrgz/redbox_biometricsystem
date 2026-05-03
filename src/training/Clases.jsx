@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
@@ -14,9 +14,11 @@ import TituloTerciario from '../componentes/TituloTerciario';
 import { crearClases } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import { AuthContext } from '../auth/AuthContext';
 
 const Clases = () => {
     const navigation = useNavigation();
+    const { usuario, actualizarUsuario } = useContext(AuthContext);
     const [showDate, setShowDate] = useState(false);
     const [showTime, setShowTime] = useState(false);
     const [cargando, setCargando] = useState(false);
@@ -68,77 +70,52 @@ const Clases = () => {
             return;
         }
 
+        if (usuario && usuario.creditos_usuario <= 0) {
+            Alert.alert("Sin créditos", "No tienes créditos disponibles para reservar.");
+            return;
+        }
+
         setCargando(true);
 
         try {
-            // Recuperamos el ID real de la base de datos (no el celular)
-            const userId = await AsyncStorage.getItem('userId');
-            
-            if (!userId) {
-                Alert.alert("Error", "No se encontró el ID del usuario. Inicia sesión de nuevo.");
+            // 5. Usamos directamente el ID del contexto
+            if (!usuario?.id_usuario) {
+                Alert.alert("Error", "No se encontró la sesión del usuario.");
                 return;
             }
 
-            // --- CÁLCULO DE LA HORA FIN (1 hora después) ---
             const horaInicio = new Date(formData.time);
-            const horaFin = new Date(horaInicio.getTime() + (60 * 60 * 1000)); // Sumamos 1 hora en ms
+            const horaFin = new Date(horaInicio.getTime() + (60 * 60 * 1000));
 
-            // Formateo de horas para Django (HH:MM)
             const formatoHora = (fecha) => fecha.toLocaleTimeString([], { 
                 hour: '2-digit', minute: '2-digit', hour12: false 
             });
 
             const datosParaEnviar = {
-                id_usuario: parseInt(userId), 
+                id_usuario: usuario.id_usuario, // ✅ Usamos el dato del contexto
                 fecha_clase: formatearFechaParaDjango(formData.date), 
                 hora_inicio_clase: formatoHora(horaInicio),
-                hora_fin_clase: formatoHora(horaFin), // ✅ Ahora es dinámica
+                hora_fin_clase: formatoHora(horaFin),
                 cupo_maximo_clase: 20,
                 descripcion_clase: "Entrenamiento de CrossFit"
             };
 
-            console.log("Enviando a Django:", datosParaEnviar);
-
-            const respuesta = await crearClases(datosParaEnviar);
+            await crearClases(datosParaEnviar);
             
+            // 6. ¡MAGIA! Actualizamos los datos globales del usuario (créditos)
+            await actualizarUsuario();
+
             Alert.alert("¡Éxito!", "Clase creada correctamente. Se descontó 1 crédito.", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
 
         } catch (error) {
-            console.log("Error completo:", error.response?.data);
-            
-            // Si el error es por duplicado o créditos, vendrá en error.response.data.error
-            const mensajeError = error.response?.data?.error || JSON.stringify(error.response?.data) || 
-            "No se pudo conectar con el servidor.";
-
+            console.log("Error:", error.response?.data);
+            const mensajeError = error.response?.data?.error || "No se pudo crear la clase.";
             Alert.alert("Atención", mensajeError);
         } finally {
             setCargando(false);
         }
-    };
-
-    const handleCancelar = () => {
-        Alert.alert(
-            "Cancelar Clase",
-            "¿Estás seguro de que deseas cancelar esta clase? Se te devolverá el crédito.",
-            [
-                { text: "No", style: "cancel" },
-                { 
-                    text: "Sí, cancelar", 
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await cancelarClase(clase.id_clase);
-                            Alert.alert("Éxito", "Clase cancelada correctamente.");
-                            onActualizar(); // Función para refrescar la lista
-                        } catch (error) {
-                            Alert.alert("Error", "No se pudo cancelar la clase.");
-                        }
-                    }
-                }
-            ]
-        );
     };
 
     return (

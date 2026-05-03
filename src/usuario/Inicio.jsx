@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
 import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator, Alert } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
@@ -12,29 +12,13 @@ import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUsuarioById, redBoxApi } from '../api/conexion';
-
+import { AuthContext } from '../auth/AuthContext';
 
 function Inicio() {
     const navigation = useNavigation();
-    const [nombreUsuario, setNombreUsuario] = useState('');
+    const { usuario, actualizarUsuario, cargandoAuth } = useContext(AuthContext);
     const [reservas, setReservas] = useState([]);
-    const [cargandoUsuario, setCargandoUsuario] = useState(true);
     const [cargandoReservas, setCargandoReservas] = useState(true);
-
-    // 1. Función para cargar el usuario (esta puede quedarse igual o en useFocusEffect)
-    const obtenerUsuario = async () => {
-        try {
-            const id = await AsyncStorage.getItem('userId');
-            if (id) {
-                const datos = await getUsuarioById(JSON.parse(id));
-                setNombreUsuario(datos.pnombre_usuario);
-            }
-        } catch (error) {
-            console.error("Error cargando perfil:", error);
-        } finally {
-            setCargandoUsuario(false);
-        }
-    };
 
     // 2. Función para cargar las reservas
     const obtenerReservas = async () => {
@@ -68,8 +52,8 @@ function Inicio() {
                             
                             Alert.alert("Éxito", "Clase cancelada correctamente.");
                             
-                            // Refrescamos la lista de reservas automáticamente
-                            obtenerReservas(); 
+                            actualizarUsuario(); // Actualiza créditos globalmente
+                            obtenerReservas(); // Refrescamos la lista de reservas automáticamente
                         } catch (error) {
                             console.error("Error al cancelar:", error);
                             Alert.alert("Error", "No se pudo cancelar la clase en este momento.");
@@ -82,7 +66,6 @@ function Inicio() {
 
     useFocusEffect(
         useCallback(() => {
-            obtenerUsuario();
             obtenerReservas();
         }, [])
     );
@@ -96,10 +79,10 @@ function Inicio() {
             <ScrollView style={styles.container}>
                 <HeaderColor />
                 <View style={styles.content}>
-                    {cargandoUsuario ? (
+                    {cargandoAuth ? (
                         <ActivityIndicator color="red" size="small" />
                     ) : (
-                        <TituloPrincipal titulo={`Hola ${nombreUsuario}`} />
+                        <TituloPrincipal titulo={`Hola ${usuario?.pnombre_usuario || 'Usuario'}`} />
                     )}
 
                     <TituloSecundario titulo="Bienvenido al panel de control" />
@@ -133,7 +116,7 @@ function Inicio() {
 
                     <View style={styles.containerMenu}>
                         <View style={styles.row}>
-                            <BotonRojo titulo="Crear Planificación" onPress={() => navigation.navigate('Clases')} style={styles.botonGrid} />
+                            <BotonRojo titulo="Crear Planificación" onPress={() => navigation.navigate('CrearPlanificacion')} style={styles.botonGrid} />
                             <BotonRojo titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonGrid} />
                         </View>
                         <View style={styles.row}>
