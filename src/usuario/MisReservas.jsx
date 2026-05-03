@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderColor from '../componentes/HeaderColor';
@@ -7,18 +7,19 @@ import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
 import TituloTerciario from '../componentes/TituloTerciario';
 import CardMisReservas from '../componentes/CardMisReservas';
-import { getUsuarioById, redBoxApi } from '../api/conexion';
+import {  redBoxApi } from '../api/conexion';
 import { useFocusEffect } from '@react-navigation/native';
+import { AuthContext } from '../auth/AuthContext';
 
 const MisReservas = () => {
-    const [usuario, setUsuario] = useState(null);
+    const { usuario, actualizarUsuario, cargandoAuth } = useContext(AuthContext);
     const [reservasAgrupadas, setReservasAgrupadas] = useState({});
+    const [cargandoClases, setCargandoClases] = useState(true);
     const [cargando, setCargando] = useState(true);
 
-    // --- ESTE ES EL CAMBIO CLAVE ---
     useFocusEffect(
         useCallback(() => {
-            cargarDatosCompletos();
+            cargarHistorial();
         }, [])
     );
 
@@ -29,22 +30,19 @@ const MisReservas = () => {
         };
         return meses[nombreMes.toLowerCase()];
     };
-    const cargarDatosCompletos = async () => {
+    const cargarHistorial = async () => {
         try {
-            const idAlmacenado = await AsyncStorage.getItem('userId');
-            if (!idAlmacenado) return;
-            const idLimpio = JSON.parse(idAlmacenado);
+            setCargandoClases(true);
+            
+            // 4. Actualizamos los créditos globalmente (por si acaso) y pedimos las clases
+            // Usamos usuario.id_usuario directamente del contexto
+            if (!usuario?.id_usuario) return;
 
-            // Hacemos las peticiones en paralelo para mayor velocidad
-            const [datosUsuario, respClases] = await Promise.all([
-                getUsuarioById(idLimpio),
-                redBoxApi.get(`/clases/?id_usuario=${idLimpio}`)
+            const [_, respClases] = await Promise.all([
+                actualizarUsuario(), // Refresca créditos globalmente
+                redBoxApi.get(`/clases/?id_usuario=${usuario.id_usuario}`) // Trae las clases
             ]);
 
-            // Actualizamos créditos (se verá el cambio si creaste una clase)
-            setUsuario(datosUsuario);
-
-            // Agrupamos las nuevas clases (aparecerá la que acabas de crear)
             const agrupado = respClases.data.reduce((acc, reserva) => {
                 const fechaObj = new Date(reserva.fecha_clase);
                 const mesAño = fechaObj.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
@@ -63,9 +61,9 @@ const MisReservas = () => {
 
             setReservasAgrupadas(agrupado);
         } catch (error) {
-            console.error("Error al sincronizar datos:", error);
+            console.error("Error al cargar historial:", error);
         } finally {
-            setCargando(false); 
+            setCargandoClases(false); 
         }
     };
 
@@ -77,11 +75,10 @@ const MisReservas = () => {
                     <TituloPrincipal titulo="Mis Reservas" />
                     <TituloSecundario titulo="Consulta tu historial y resumen mensual de clases." />
                     
-                    {/* CRÉDITOS REALES DEL USUARIO */}
+                    {/* 5. Usamos los datos del contexto directamente */}
                     <View style={styles.contenedorCreditos}>
                         <Text style={styles.titulo_creditos}>
                             Créditos usados: <Text style={styles.texto_valor}>
-                                {/* Lógica: Si el plan es de 30, restamos los que tiene */}
                                 {usuario ? (30 - usuario.creditos_usuario) : '...'}
                             </Text>
                         </Text>
@@ -92,33 +89,28 @@ const MisReservas = () => {
                         </Text>
                     </View>
 
-                    {cargando ? (
-                    <ActivityIndicator size="large" color="#FF4D4D" style={{ marginTop: 30 }} />
-                ) : (
-                    Object.keys(reservasAgrupadas).length > 0 ? (
-                        // 1. Obtenemos los nombres de los meses
-                        Object.keys(reservasAgrupadas)
-                            // 2. Los ordenamos de forma descendente
-                            .sort((a, b) => {
-                                // Convertimos el título "Mes Año" a un objeto Date para comparar
-                                // Usamos el día 1 de cada mes para la comparación
-                                const dateA = new Date(a.split(' ')[1], obtenerNumeroMes(a.split(' ')[0]));
-                                const dateB = new Date(b.split(' ')[1], obtenerNumeroMes(b.split(' ')[0]));
-                                return dateB - dateA; // Orden descendente (más reciente arriba)
-                            })
-                            // 3. Mapeamos los meses ya ordenados
-                            .map((mes) => (
-                                <View key={mes} style={{ marginBottom: 25 }}>
-                                    <TituloTerciario titulo={mes} />
-                                    <CardMisReservas data={reservasAgrupadas[mes]} />
-                                </View>
-                            ))
+                    {(cargandoClases || cargandoAuth) ? (
+                        <ActivityIndicator size="large" color="#FF4D4D" style={{ marginTop: 30 }} />
                     ) : (
-                        <View style={styles.vacioContainer}>
-                            <Text style={styles.textoVacio}>No se encontraron reservas en tu historial.</Text>
-                        </View>
-                    )
-                )}
+                        Object.keys(reservasAgrupadas).length > 0 ? (
+                            Object.keys(reservasAgrupadas)
+                                .sort((a, b) => {
+                                    const dateA = new Date(a.split(' ')[1], obtenerNumeroMes(a.split(' ')[0]));
+                                    const dateB = new Date(b.split(' ')[1], obtenerNumeroMes(b.split(' ')[0]));
+                                    return dateB - dateA;
+                                })
+                                .map((mes) => (
+                                    <View key={mes} style={{ marginBottom: 25 }}>
+                                        <TituloTerciario titulo={mes} />
+                                        <CardMisReservas data={reservasAgrupadas[mes]} />
+                                    </View>
+                                ))
+                        ) : (
+                            <View style={styles.vacioContainer}>
+                                <Text style={styles.textoVacio}>No se encontraron reservas en tu historial.</Text>
+                            </View>
+                        )
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
