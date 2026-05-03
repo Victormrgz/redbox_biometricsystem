@@ -136,9 +136,9 @@ function Inicio() {
                             <BotonGris titulo="Editar Perfil" onPress={() => navigation.navigate('Perfil')} style={styles.botonGrid} />
                             <BotonGris titulo="Gestionar Roles" onPress={() => navigation.navigate('GestionarRoles')} style={styles.botonGrid} />
                         </View>
-                        <BotonBlanco titulo="Registrar Pago" onPress={() => console.log("Pago")} style={styles.botonFull} />
-                        <BotonBlanco titulo="Historial de pagos" onPress={() => console.log("Historial")} style={styles.botonFull} />
-                        <BotonBlanco titulo="Suscripciones" onPress={() => console.log("Suscripciones")} style={styles.botonFull} />
+                        <BotonBlanco titulo="Registrar Pago" onPress={() => navigation.navigate('RegistrarPago')} style={styles.botonFull} />
+                        <BotonBlanco titulo="Historial de pagos" onPress={() => navigation.navigate('HistoricoPagos')} style={styles.botonFull} />
+                        <BotonBlanco titulo="Suscripciones" onPress={() => navigation.navigate('Suscripciones')} style={styles.botonFull} />
                     </View>
                 </View>
             </ScrollView>

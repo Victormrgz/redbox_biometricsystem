@@ -11,6 +11,7 @@ import {  redBoxApi } from '../api/conexion';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../auth/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getSuscripcion } from '../api/conexion';
 
 const MisReservas = () => {
     const insets = useSafeAreaInsets();
@@ -18,6 +19,7 @@ const MisReservas = () => {
     const [reservasAgrupadas, setReservasAgrupadas] = useState({});
     const [cargandoClases, setCargandoClases] = useState(true);
     const [cargando, setCargando] = useState(true);
+    const [suscripcion, setSuscripcion] = useState(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -33,6 +35,9 @@ const MisReservas = () => {
         return meses[nombreMes.toLowerCase()];
     };
     const cargarHistorial = async () => {
+        const token = await AsyncStorage.getItem('userToken');
+        const sus = await getSuscripcion(usuario.id_usuario, token);
+        setSuscripcion(sus);
         try {
             setCargandoClases(true);
             
@@ -81,7 +86,9 @@ const MisReservas = () => {
                     <View style={styles.contenedorCreditos}>
                         <Text style={styles.titulo_creditos}>
                             Créditos usados: <Text style={styles.texto_valor}>
-                                {usuario ? (30 - usuario.creditos_usuario) : '...'}
+                                {suscripcion?.plan && usuario
+                                    ? (suscripcion.plan === 'Premium' ? 24 : 12) - usuario.creditos_usuario
+                                    : '...'}
                             </Text>
                         </Text>
                         <Text style={styles.titulo_creditos}>
