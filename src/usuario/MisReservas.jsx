@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useContext } from 'react';
-import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native'; 
+import { StyleSheet, View, Text, ScrollView, ActivityIndicator } from 'react-native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
@@ -10,8 +10,10 @@ import CardMisReservas from '../componentes/CardMisReservas';
 import {  redBoxApi } from '../api/conexion';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../auth/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MisReservas = () => {
+    const insets = useSafeAreaInsets();
     const { usuario, actualizarUsuario, cargandoAuth } = useContext(AuthContext);
     const [reservasAgrupadas, setReservasAgrupadas] = useState({});
     const [cargandoClases, setCargandoClases] = useState(true);
@@ -68,7 +70,7 @@ const MisReservas = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.safeArea, { paddingTop: insets.top }]}>
             <ScrollView style={styles.container}> 
                 <HeaderColor />
                 <View style={styles.content}>
@@ -113,15 +115,14 @@ const MisReservas = () => {
                     )}
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff',
-        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#fff', 
     },
     container: {
         flex: 1,

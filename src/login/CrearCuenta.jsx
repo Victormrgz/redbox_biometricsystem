@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import HeaderColor from '../componentes/HeaderColor';
 import BotonRojo from '../componentes/BotonRojo';
@@ -10,6 +10,7 @@ import { registrarUsuario } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Picker } from '@react-native-picker/picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
@@ -19,6 +20,7 @@ const opcionesGenero = [
 ];
 
 const CrearCuenta = ({ route }) => {
+    const insets = useSafeAreaInsets();
     const { setIsAuthenticated } = route.params;
 
     const phoneInputRef = useRef(null);
@@ -180,7 +182,7 @@ const CrearCuenta = ({ route }) => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.safeArea, { paddingTop: insets.top }]}>
             <ScrollView>
                 <HeaderColor />
                 <View style={styles.container}>
@@ -407,17 +409,17 @@ const CrearCuenta = ({ route }) => {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 export default CrearCuenta;
 
 const styles = StyleSheet.create({
+    
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff',
-        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#fff'
     },
     container: {
         maxWidth: 420,

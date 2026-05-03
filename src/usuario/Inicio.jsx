@@ -1,6 +1,6 @@
 import React, { useState, useContext, useCallback } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Text, SafeAreaView, ScrollView, ActivityIndicator, Alert } from 'react-native'; 
+import { StyleSheet, View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import { useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -11,12 +11,16 @@ import CardPantallaInicio from '../componentes/CardPantallaInicio';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUsuarioById, redBoxApi } from '../api/conexion';
+import { redBoxApi } from '../api/conexion';
 import { AuthContext } from '../auth/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 function Inicio() {
+    const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const { usuario, actualizarUsuario, cargandoAuth } = useContext(AuthContext);
+    console.log("DATOS DEL USUARIO EN INICIO:", usuario);
     const [reservas, setReservas] = useState([]);
     const [cargandoReservas, setCargandoReservas] = useState(true);
 
@@ -46,8 +50,9 @@ function Inicio() {
                     text: "Sí, cancelar", 
                     style: "destructive",
                     onPress: async () => {
+                        console.log("Intentando cancelar clase con ID:", idClase);
                         try {
-                            // Llamamos al método @action 'cancelar' que definiste en el ViewSet
+                            // Llamamos al método @action 'cancelar' definido en el ViewSet
                             await redBoxApi.post(`/clases/${idClase}/cancelar/`);
                             
                             Alert.alert("Éxito", "Clase cancelada correctamente.");
@@ -66,8 +71,16 @@ function Inicio() {
 
     useFocusEffect(
         useCallback(() => {
-            obtenerReservas();
-        }, [])
+            const verificarYRefrescar = async () => {
+                // Si el usuario llega como null, forzamos al contexto a buscar en AsyncStorage
+                if (!usuario) {
+                    await actualizarUsuario();
+                }
+                obtenerReservas();
+            };
+
+            verificarYRefrescar();
+        }, [usuario]) // Se dispara si el usuario cambia o la pantalla toma foco
     );
 
     const fechaActual = new Date().toLocaleDateString('es-ES', {
@@ -75,7 +88,7 @@ function Inicio() {
     });
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.safeArea, { paddingTop: insets.top }]}>
             <ScrollView style={styles.container}>
                 <HeaderColor />
                 <View style={styles.content}>
@@ -129,16 +142,14 @@ function Inicio() {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff', // O el color de fondo de tu app
-        // En Android, SafeAreaView a veces necesita un padding manual
-        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#fff', 
     },
     container: {
         flex: 1,

@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from 'react-native'; 
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import DateTimePicker  from '@react-native-community/datetimepicker';
@@ -15,8 +15,10 @@ import { crearClases } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { AuthContext } from '../auth/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Clases = () => {
+    const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const { usuario, actualizarUsuario } = useContext(AuthContext);
     const [showDate, setShowDate] = useState(false);
@@ -119,7 +121,7 @@ const Clases = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.safeArea, { paddingTop: insets.top }]}>
             <ScrollView style={styles.container}> 
                 <HeaderColor />
 
@@ -182,16 +184,14 @@ const Clases = () => {
                     <TituloSecundario titulo="10:00 - 11:00: Yoga" />
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff', // O el color de fondo de tu app
-        // En Android, SafeAreaView a veces necesita un padding manual
-        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#fff', 
     },
     container: {
         flex: 1,

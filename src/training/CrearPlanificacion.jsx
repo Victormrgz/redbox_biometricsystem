@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 // ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
-import { StyleSheet, View, Platform, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from 'react-native'; 
+import { StyleSheet, View, Platform, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native'; 
 import { StatusBar } from 'expo-status-bar';
 import HeaderColor from '../componentes/HeaderColor';
 import Constants from 'expo-constants';
 import DateTimePicker  from '@react-native-community/datetimepicker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import BotonRojo from '../componentes/BotonRojo';
-import TituloPrincipal from '../componentes/TituloPrincipal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CrearPlanificacion = () => {
+    const insets = useSafeAreaInsets(); 
     const [showDate, setShowDate] = useState(false);
         const [showTime, setShowTime] = useState(false);
     
@@ -17,8 +18,9 @@ const CrearPlanificacion = () => {
             date: '',
             time: '',
         });
+
     return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <ScrollView style={styles.container}> 
             <HeaderColor />
 
@@ -74,7 +76,7 @@ const CrearPlanificacion = () => {
                 </View>
             </View>
         </ScrollView>
-    </SafeAreaView>
+    </View>
     );
 };
 export default CrearPlanificacion;
@@ -82,9 +84,7 @@ export default CrearPlanificacion;
     const styles = StyleSheet.create({  
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff', // O el color de fondo de tu app
-        // En Android, SafeAreaView a veces necesita un padding manual
-        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#fff',  
     },
     container: {
         flex: 1,

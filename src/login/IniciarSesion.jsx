@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Platform, Alert } from 'react-native';
 import HeaderColor from '../componentes/HeaderColor';
 import TituloPrincipal from '../componentes/TituloPrincipal';
@@ -10,10 +10,13 @@ import { useNavigation } from '@react-navigation/native';
 import { loginUsuario } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuthContext } from '../auth/AuthContext';
 
 const IniciarSesion = ({route}) => {
     const { setIsAuthenticated } = route.params;
-
+    const { actualizarUsuario } = useContext(AuthContext);
+    const insets = useSafeAreaInsets();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [cargando, setCargando] = useState(false);
@@ -45,6 +48,7 @@ const IniciarSesion = ({route}) => {
         if (respuesta.token) {
             await AsyncStorage.setItem('userToken', respuesta.token);
             await AsyncStorage.setItem('userId', JSON.stringify(respuesta.user.id_usuario));
+            await actualizarUsuario(respuesta.user); 
             setIsAuthenticated(true);
         }
 
@@ -78,7 +82,10 @@ const IniciarSesion = ({route}) => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[
+            styles.mainContainer, 
+            { paddingTop: insets.top, paddingBottom: insets.bottom }
+        ]}>
             <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
                 <HeaderColor />
                 <View style={styles.container}>
@@ -138,7 +145,7 @@ const IniciarSesion = ({route}) => {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -146,86 +153,90 @@ const IniciarSesion = ({route}) => {
 export default IniciarSesion;
 
 const styles = StyleSheet.create({
-    safeArea: {
+    mainContainer: {
         flex: 1,
         backgroundColor: '#fff',
-        paddingTop: Constants.statusBarHeight,
     },
     container: {
         maxWidth: 420,
         alignSelf: 'center',
-        padding: 16,
+        paddingHorizontal: 20,
         width: '100%',
         flex: 1,
         justifyContent: 'center',
+        paddingBottom: 40, // Espacio extra para que no pegue al borde inferior
     },
     titulo: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
-        paddingBottom: 15,
+        marginBottom: 10,
         textAlign: 'center',
+        color: '#000',
     },
     subtitulo: {
         textAlign: 'center',
-        marginBottom: 24,
-        color: '#222',
+        marginBottom: 30,
+        color: '#666',
         fontSize: 16,
     },
     label: {
         fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 4,
+        fontWeight: '700',
+        marginBottom: 8,
         color: '#333',
-        marginLeft: 4,
     },
     contenedorInput: {
         flexDirection: 'row',
         alignItems: 'center',
+        position: 'relative', // Para posicionar el icono
     },
-    icono: {
-        flex: 1,
-        marginLeft: -30,
-        paddingTop: 8
-    },
-    
     input: {
         backgroundColor: '#f5f5f5',
-        borderRadius: 8,
-        padding: Platform.OS === 'ios' ? 14 : 10,
-        marginBottom: 12,
+        borderRadius: 10,
+        padding: Platform.OS === 'ios' ? 16 : 12,
+        marginBottom: 16,
         fontSize: 16,
         flex: 1,
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    icono: {
+        position: 'absolute',
+        right: 15,
+        top: -8, // Ajuste manual según el padding del input
     },
     link: {
         color: '#b71c1c',
-        textDecorationLine: 'underline',
+        fontWeight: '600',
         alignSelf: 'center',
         fontSize: 14,
+        marginVertical: 10,
     },
     separadorRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 18,
+        marginVertical: 25,
     },
     linea: {
         flex: 1,
         height: 1,
-        backgroundColor: '#ccc',
+        backgroundColor: '#eee',
     },
     separadorText: {
-        marginHorizontal: 8,
-        color: '#888',
-        fontSize: 14,
+        marginHorizontal: 15,
+        color: '#bbb',
+        fontWeight: '600',
     },
     linksRow: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 32,
-        gap: 4,
+        marginTop: 40,
+        gap: 5,
     },
     footerLink: {
-        color: '#b71c1c',
+        color: '#888',
         textDecorationLine: 'underline',
-        fontSize: 13,
+        fontSize: 12,
     },
 });
+
