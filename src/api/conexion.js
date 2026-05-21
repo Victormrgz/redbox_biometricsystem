@@ -94,3 +94,11 @@ export const getHistorialPagos = async (token, { idUsuario = null, fecha = null 
     });
     return respuesta.data;
 };
+
+// Editar mi propio perfil (usuario logueado)
+export const editarMiPerfil = async (datos, token) => {
+    const respuesta = await redBoxApi.put('/editar_mi_perfil/', datos, {
+        headers: { Authorization: `Token ${token}` }
+    });
+    return respuesta.data;
+};
