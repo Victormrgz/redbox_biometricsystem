@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
     View,
     Text,
@@ -7,8 +7,10 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Platform
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import BotonRojo from '../componentes/BotonRojo';
 import BotonGris from '../componentes/BotonGris';
 import TituloPrincipal from '../componentes/TituloPrincipal';
@@ -18,18 +20,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { editarMiPerfil, getUsuarioById } from '../api/conexion';
 import { AuthContext } from '../auth/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { Picker } from '@react-native-picker/picker';
 
 const EditarPerfil = ({ navigation, route }) => {
-    // Obtener setIsAuthenticated de los parámetros
     const setIsAuthenticated = route.params?.setIsAuthenticated;
-    
-    // Obtener la función actualizarUsuario del contexto
     const { actualizarUsuario } = useContext(AuthContext);
     
+    const phoneInputRef = useRef(null);
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const insets = useSafeAreaInsets();
     
@@ -39,6 +40,7 @@ const EditarPerfil = ({ navigation, route }) => {
         papellido_usuario: '',
         sapellido_usuario: '',
         telefono_usuario: '',
+        codigoTelefono: '0412',
         fecha_nacimiento_usuario: '',
         genero_usuario: '',
         cedula_usuario: '',
@@ -49,6 +51,38 @@ const EditarPerfil = ({ navigation, route }) => {
     });
 
     const [datosOriginales, setDatosOriginales] = useState({});
+
+    // Función para separar el teléfono completo en código + número
+    const separarTelefono = (telefonoCompleto) => {
+        if (!telefonoCompleto) return { codigo: '0412', numero: '' };
+        
+        const codigos = ['0412', '0414', '0416', '0424', '0426'];
+        for (let codigo of codigos) {
+            if (telefonoCompleto.startsWith(codigo)) {
+                return {
+                    codigo: codigo,
+                    numero: telefonoCompleto.substring(codigo.length)
+                };
+            }
+        }
+        return { codigo: '0412', numero: telefonoCompleto };
+    };
+
+    // Función para formatear fecha a YYYY-MM-DD
+    const formatFecha = (date) => {
+        if (!date || !(date instanceof Date)) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Función para convertir string a Date
+    const stringToDate = (fechaString) => {
+        if (!fechaString) return null;
+        const [year, month, day] = fechaString.split('-');
+        return new Date(year, month - 1, day);
+    };
 
     useEffect(() => {
         cargarUsuarioLogueado();
@@ -67,12 +101,16 @@ const EditarPerfil = ({ navigation, route }) => {
             
             const usuarioData = await getUsuarioById(JSON.parse(userId));
             
+            // Separar el teléfono en código y número
+            const { codigo, numero } = separarTelefono(usuarioData.telefono_usuario || '');
+            
             setFormData({
                 pnombre_usuario: usuarioData.pnombre_usuario || '',
                 snombre_usuario: usuarioData.snombre_usuario || '',
                 papellido_usuario: usuarioData.papellido_usuario || '',
                 sapellido_usuario: usuarioData.sapellido_usuario || '',
-                telefono_usuario: usuarioData.telefono_usuario || '',
+                telefono_usuario: numero,
+                codigoTelefono: codigo,
                 fecha_nacimiento_usuario: usuarioData.fecha_nacimiento_usuario || '',
                 genero_usuario: usuarioData.genero_usuario || '',
                 cedula_usuario: usuarioData.cedula_usuario || '',
@@ -87,7 +125,8 @@ const EditarPerfil = ({ navigation, route }) => {
                 snombre_usuario: usuarioData.snombre_usuario || '',
                 papellido_usuario: usuarioData.papellido_usuario || '',
                 sapellido_usuario: usuarioData.sapellido_usuario || '',
-                telefono_usuario: usuarioData.telefono_usuario || '',
+                telefono_usuario: numero,
+                codigoTelefono: codigo,
                 fecha_nacimiento_usuario: usuarioData.fecha_nacimiento_usuario || '',
                 genero_usuario: usuarioData.genero_usuario || '',
                 cedula_usuario: usuarioData.cedula_usuario || '',
@@ -120,6 +159,14 @@ const EditarPerfil = ({ navigation, route }) => {
         setModoEdicion(false);
     };
 
+    const handleDateChange = (event, selectedDate) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            const fechaFormateada = formatFecha(selectedDate);
+            handleInputChange('fecha_nacimiento_usuario', fechaFormateada);
+        }
+    };
+
     const handleGuardar = async () => {
         try {
             setGuardando(true);
@@ -132,10 +179,19 @@ const EditarPerfil = ({ navigation, route }) => {
                 if (formData.snombre_usuario) datosEnviar.snombre_usuario = formData.snombre_usuario;
                 if (formData.papellido_usuario) datosEnviar.papellido_usuario = formData.papellido_usuario;
                 if (formData.sapellido_usuario) datosEnviar.sapellido_usuario = formData.sapellido_usuario;
-                if (formData.telefono_usuario) datosEnviar.telefono_usuario = formData.telefono_usuario;
                 if (formData.fecha_nacimiento_usuario) datosEnviar.fecha_nacimiento_usuario = formData.fecha_nacimiento_usuario;
                 if (formData.genero_usuario) datosEnviar.genero_usuario = formData.genero_usuario;
                 if (formData.cedula_usuario) datosEnviar.cedula_usuario = formData.cedula_usuario;
+                
+                // Combinar código + número de teléfono
+                if (formData.telefono_usuario && formData.telefono_usuario.length === 7) {
+                    const telefonoCompleto = formData.codigoTelefono + formData.telefono_usuario;
+                    datosEnviar.telefono_usuario = telefonoCompleto;
+                } else if (formData.telefono_usuario) {
+                    Alert.alert('Error', 'El teléfono debe tener 7 dígitos');
+                    setGuardando(false);
+                    return;
+                }
                 
                 if (formData.nueva_contrasena) {
                     if (formData.nueva_contrasena !== formData.confirmar_contrasena) {
@@ -160,11 +216,7 @@ const EditarPerfil = ({ navigation, route }) => {
             }
             
             await editarMiPerfil(datosEnviar, token);
-            
-            // ✅ IMPORTANTE: Actualizar el contexto global con los nuevos datos
             await actualizarUsuario();
-            
-            // También recargar los datos locales
             await cargarUsuarioLogueado();
             setModoEdicion(false);
             
@@ -177,18 +229,15 @@ const EditarPerfil = ({ navigation, route }) => {
         }
     };
 
-    // Función de cerrar sesión
     const handleCerrarSesion = async () => { 
         if (!setIsAuthenticated) {
             console.error("ERROR: setIsAuthenticated es undefined en EditarPerfil");
             await AsyncStorage.clear();
-            console.log("Storage limpiado, pero debes reiniciar la app manualmente.");
             return;
         }
 
         try {
             await AsyncStorage.clear(); 
-            console.log("Sesión cerrada correctamente");
             setIsAuthenticated(false);
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
@@ -212,8 +261,8 @@ const EditarPerfil = ({ navigation, route }) => {
             >
                 <HeaderColor />
                 <View style={styles.header}>
-                    <TituloPrincipal titulo ="Editar Perfil"/>
-                    <TituloSecundario titulo ="Actualiza tu información personal para mejorar tu experiencia."/>
+                    <TituloPrincipal titulo="Editar Perfil"/>
+                    <TituloSecundario titulo="Actualiza tu información personal para mejorar tu experiencia."/>
                 </View>
 
                 <View style={styles.formContainer}>
@@ -265,29 +314,66 @@ const EditarPerfil = ({ navigation, route }) => {
                         </View>
                     </View>
 
-                    {/* Teléfono */}
+                    {/* Teléfono con Picker y Input separados */}
                     <View style={styles.campoContainer}>
                         <Text style={styles.label}>Teléfono</Text>
-                        <TextInput
-                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                            value={formData.telefono_usuario}
-                            onChangeText={(text) => handleInputChange('telefono_usuario', text)}
-                            placeholder="04121208635"
-                            keyboardType="phone-pad"
-                            editable={modoEdicion}
-                        />
+                        <View style={styles.filaTelefono}>
+                            <View style={[styles.contenedorPicker, !modoEdicion && styles.contenedorPickerBloqueado]}>
+                                <Text style={styles.textoCodigo}>{formData.codigoTelefono}</Text>
+                                <Picker
+                                    mode="dropdown"
+                                    selectedValue={formData.codigoTelefono}
+                                    onValueChange={(itemValue) => {
+                                        handleInputChange('codigoTelefono', itemValue);
+                                        phoneInputRef.current?.focus();
+                                    }}
+                                    style={styles.picker}
+                                    enabled={modoEdicion}
+                                >
+                                    <Picker.Item label="0412" value="0412" />
+                                    <Picker.Item label="0414" value="0414" />
+                                    <Picker.Item label="0416" value="0416" />
+                                    <Picker.Item label="0424" value="0424" />
+                                    <Picker.Item label="0426" value="0426" />
+                                </Picker>
+                            </View>
+
+                            <TextInput
+                                ref={phoneInputRef}
+                                style={[styles.inputTelefono, !modoEdicion && styles.inputBloqueado]}
+                                placeholder="1234567"
+                                keyboardType="numeric"
+                                maxLength={7}
+                                value={formData.telefono_usuario}
+                                onChangeText={(text) => {
+                                    const cleaned = text.replace(/[^0-9]/g, '');
+                                    handleInputChange('telefono_usuario', cleaned);
+                                }}
+                                editable={modoEdicion}
+                            />
+                        </View>
                     </View>
 
-                    {/* Fecha de nacimiento */}
+                    {/* Fecha de nacimiento con DateTimePicker */}
                     <View style={styles.campoContainer}>
                         <Text style={styles.label}>Fecha de nacimiento</Text>
-                        <TextInput
+                        <TouchableOpacity
                             style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                            value={formData.fecha_nacimiento_usuario}
-                            onChangeText={(text) => handleInputChange('fecha_nacimiento_usuario', text)}
-                            placeholder="06/03/2004"
-                            editable={modoEdicion}
-                        />
+                            onPress={() => modoEdicion && setShowDatePicker(true)}
+                            disabled={!modoEdicion}
+                        >
+                            <Text style={{ color: formData.fecha_nacimiento_usuario ? '#000' : '#999', fontSize: 16 }}>
+                                {formData.fecha_nacimiento_usuario || 'Seleccionar fecha'}
+                            </Text>
+                        </TouchableOpacity>
+                        {showDatePicker && modoEdicion && (
+                            <DateTimePicker
+                                value={stringToDate(formData.fecha_nacimiento_usuario) || new Date()}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
+                            />
+                        )}
                     </View>
 
                     {/* Género */}
@@ -414,17 +500,14 @@ const EditarPerfil = ({ navigation, route }) => {
                             <BotonRojo titulo="Editar Perfil" onPress={habilitarEdicion} style={styles.botonGrid} />
                         ) : (
                             <>
-                                <BotonGris titulo="Cancelar" onPress={cancelarEdicion} style={styles.botonGrid} disabled ={guardando} />
-
-                                <BotonRojo titulo="Guardar Cambios" onPress={handleGuardar} style={styles.botonGrid} disabled ={guardando}/>
-                                
+                                <BotonGris titulo="Cancelar" onPress={cancelarEdicion} style={styles.botonGrid} disabled={guardando} />
+                                <BotonRojo titulo="Guardar Cambios" onPress={handleGuardar} style={styles.botonGrid} disabled={guardando} />
                             </>
                         )}
                     </View>
 
                     {/* Botón de Cerrar Sesión */}
                     <BotonGris titulo="Cerrar Sesión" onPress={handleCerrarSesion} style={styles.botonGrid} />
-
                 </View>
             </ScrollView>
         </View>    
@@ -451,17 +534,6 @@ const styles = StyleSheet.create({
         padding: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#000',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 14,
-        color: '#666',
-        lineHeight: 20,
     },
     formContainer: {
         padding: 20,
@@ -491,7 +563,7 @@ const styles = StyleSheet.create({
         borderColor: '#e0e0e0',
         borderRadius: 8,
         paddingHorizontal: 12,
-        paddingVertical: 10,
+        paddingVertical: 12,
         fontSize: 16,
         color: '#000',
     },
@@ -499,6 +571,49 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9f9f9',
         color: '#666',
         borderColor: '#eee',
+    },
+    // Estilos para el teléfono
+    filaTelefono: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    contenedorPicker: {
+        width: '35%',
+        height: 50,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    contenedorPickerBloqueado: {
+        backgroundColor: '#f9f9f9',
+        borderColor: '#eee',
+    },
+    textoCodigo: {
+        fontSize: 16,
+        color: '#000',
+    },
+    picker: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 0,
+        backgroundColor: 'transparent',
+    },
+    inputTelefono: {
+        width: '62%',
+        height: 50,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        color: '#000',
     },
     generoContainer: {
         flexDirection: 'row',
@@ -510,11 +625,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#e0e0e0',
         borderRadius: 8,
-        paddingVertical: 10,
+        paddingVertical: 12,
         alignItems: 'center',
     },
     generoBotonActivo: {
         backgroundColor: '#e60000',
+        borderColor: '#e60000',
     },
     generoTexto: {
         fontSize: 14,
@@ -541,44 +657,8 @@ const styles = StyleSheet.create({
         marginTop: 30,
         marginBottom: 20,
     },
-    editarButton: {
+    botonGrid: {
         flex: 1,
-        backgroundColor: '#FF3B30',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-    },
-    guardarButton: {
-        flex: 1,
-        backgroundColor: '#FF3B30',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-    },
-    cancelarButton: {
-        flex: 1,
-        backgroundColor: '#666',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    cerrarSesionButton: {
-        backgroundColor: '#FF3B30',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-        marginTop: 10,
-        marginBottom: 40,
-    },
-    cerrarSesionButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
 });
 
