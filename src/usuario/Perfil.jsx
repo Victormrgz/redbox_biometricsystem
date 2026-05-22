@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     View,
     Text,
@@ -9,16 +9,29 @@ import {
     Alert,
     ActivityIndicator
 } from 'react-native';
+import BotonRojo from '../componentes/BotonRojo';
+import BotonGris from '../componentes/BotonGris';
+import TituloPrincipal from '../componentes/TituloPrincipal';
+import TituloSecundario from '../componentes/TituloSecundario';
+import HeaderColor from '../componentes/HeaderColor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { editarMiPerfil, getUsuarioById } from '../api/conexion';
+import { AuthContext } from '../auth/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 const EditarPerfil = ({ navigation, route }) => {
-    // Obtener setIsAuthenticated de los parámetros (como en tu Perfil original)
+    // Obtener setIsAuthenticated de los parámetros
     const setIsAuthenticated = route.params?.setIsAuthenticated;
+    
+    // Obtener la función actualizarUsuario del contexto
+    const { actualizarUsuario } = useContext(AuthContext);
     
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
+
+    const insets = useSafeAreaInsets();
     
     const [formData, setFormData] = useState({
         pnombre_usuario: '',
@@ -147,6 +160,11 @@ const EditarPerfil = ({ navigation, route }) => {
             }
             
             await editarMiPerfil(datosEnviar, token);
+            
+            // ✅ IMPORTANTE: Actualizar el contexto global con los nuevos datos
+            await actualizarUsuario();
+            
+            // También recargar los datos locales
             await cargarUsuarioLogueado();
             setModoEdicion(false);
             
@@ -159,7 +177,7 @@ const EditarPerfil = ({ navigation, route }) => {
         }
     };
 
-    // Función de cerrar sesión - IGUAL que la que tienes en Perfil
+    // Función de cerrar sesión
     const handleCerrarSesion = async () => { 
         if (!setIsAuthenticated) {
             console.error("ERROR: setIsAuthenticated es undefined en EditarPerfil");
@@ -186,257 +204,238 @@ const EditarPerfil = ({ navigation, route }) => {
     }
 
     return (
-        <ScrollView 
-            style={styles.container}
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
-        >
-            <View style={styles.header}>
-                <Text style={styles.title}>Editar perfil</Text>
-                <Text style={styles.subtitle}>
-                    Actualiza tu información personal para mejorar tu experiencia.
-                </Text>
-            </View>
-
-            <View style={styles.formContainer}>
-                {/* Primer nombre y Segundo nombre */}
-                <View style={styles.rowContainer}>
-                    <View style={[styles.halfField, styles.marginRight]}>
-                        <Text style={styles.label}>Primer nombre</Text>
-                        <TextInput
-                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                            value={formData.pnombre_usuario}
-                            onChangeText={(text) => handleInputChange('pnombre_usuario', text)}
-                            placeholder="Primer nombre"
-                            editable={modoEdicion}
-                        />
-                    </View>
-                    <View style={styles.halfField}>
-                        <Text style={styles.label}>Segundo nombre</Text>
-                        <TextInput
-                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                            value={formData.snombre_usuario}
-                            onChangeText={(text) => handleInputChange('snombre_usuario', text)}
-                            placeholder="Segundo nombre"
-                            editable={modoEdicion}
-                        />
-                    </View>
+        <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+            <ScrollView 
+                style={styles.container}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+            >
+                <HeaderColor />
+                <View style={styles.header}>
+                    <TituloPrincipal titulo ="Editar Perfil"/>
+                    <TituloSecundario titulo ="Actualiza tu información personal para mejorar tu experiencia."/>
                 </View>
 
-                {/* Primer apellido y Segundo apellido */}
-                <View style={styles.rowContainer}>
-                    <View style={[styles.halfField, styles.marginRight]}>
-                        <Text style={styles.label}>Primer apellido</Text>
-                        <TextInput
-                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                            value={formData.papellido_usuario}
-                            onChangeText={(text) => handleInputChange('papellido_usuario', text)}
-                            placeholder="Primer apellido"
-                            editable={modoEdicion}
-                        />
-                    </View>
-                    <View style={styles.halfField}>
-                        <Text style={styles.label}>Segundo apellido</Text>
-                        <TextInput
-                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                            value={formData.sapellido_usuario}
-                            onChangeText={(text) => handleInputChange('sapellido_usuario', text)}
-                            placeholder="Segundo apellido"
-                            editable={modoEdicion}
-                        />
-                    </View>
-                </View>
-
-                {/* Teléfono */}
-                <View style={styles.campoContainer}>
-                    <Text style={styles.label}>Teléfono</Text>
-                    <TextInput
-                        style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                        value={formData.telefono_usuario}
-                        onChangeText={(text) => handleInputChange('telefono_usuario', text)}
-                        placeholder="04121208635"
-                        keyboardType="phone-pad"
-                        editable={modoEdicion}
-                    />
-                </View>
-
-                {/* Fecha de nacimiento */}
-                <View style={styles.campoContainer}>
-                    <Text style={styles.label}>Fecha de nacimiento</Text>
-                    <TextInput
-                        style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                        value={formData.fecha_nacimiento_usuario}
-                        onChangeText={(text) => handleInputChange('fecha_nacimiento_usuario', text)}
-                        placeholder="06/03/2004"
-                        editable={modoEdicion}
-                    />
-                </View>
-
-                {/* Género */}
-                <View style={styles.campoContainer}>
-                    <Text style={styles.label}>Género</Text>
-                    <View style={styles.generoContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.generoBoton,
-                                formData.genero_usuario === 'M' && styles.generoBotonActivo,
-                                !modoEdicion && styles.generoBotonBloqueado
-                            ]}
-                            onPress={() => modoEdicion && handleInputChange('genero_usuario', 'M')}
-                            disabled={!modoEdicion}
-                        >
-                            <Text style={[
-                                styles.generoTexto,
-                                formData.genero_usuario === 'M' && styles.generoTextoActivo
-                            ]}>Masculino</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.generoBoton,
-                                formData.genero_usuario === 'F' && styles.generoBotonActivo,
-                                !modoEdicion && styles.generoBotonBloqueado
-                            ]}
-                            onPress={() => modoEdicion && handleInputChange('genero_usuario', 'F')}
-                            disabled={!modoEdicion}
-                        >
-                            <Text style={[
-                                styles.generoTexto,
-                                formData.genero_usuario === 'F' && styles.generoTextoActivo
-                            ]}>Femenino</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.generoBoton,
-                                formData.genero_usuario === 'Otro' && styles.generoBotonActivo,
-                                !modoEdicion && styles.generoBotonBloqueado
-                            ]}
-                            onPress={() => modoEdicion && handleInputChange('genero_usuario', 'Otro')}
-                            disabled={!modoEdicion}
-                        >
-                            <Text style={[
-                                styles.generoTexto,
-                                formData.genero_usuario === 'Otro' && styles.generoTextoActivo
-                            ]}>Otro</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Cédula */}
-                <View style={styles.campoContainer}>
-                    <Text style={styles.label}>Cédula</Text>
-                    <TextInput
-                        style={[styles.input, !modoEdicion && styles.inputBloqueado]}
-                        value={formData.cedula_usuario}
-                        onChangeText={(text) => handleInputChange('cedula_usuario', text)}
-                        placeholder="30890595"
-                        keyboardType="numeric"
-                        editable={modoEdicion}
-                    />
-                </View>
-
-                {/* Peso y Altura */}
-                <View style={styles.rowContainer}>
-                    <View style={[styles.halfField, styles.marginRight]}>
-                        <Text style={styles.label}>Peso (kg)</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={formData.peso}
-                            onChangeText={(text) => handleInputChange('peso', text)}
-                            placeholder="70.0"
-                            keyboardType="numeric"
-                            editable={true}
-                        />
-                    </View>
-                    <View style={styles.halfField}>
-                        <Text style={styles.label}>Altura (cm)</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={formData.altura}
-                            onChangeText={(text) => handleInputChange('altura', text)}
-                            placeholder="186.0"
-                            keyboardType="numeric"
-                            editable={true}
-                        />
-                    </View>
-                </View>
-
-                {/* Cambiar contraseña - Solo en modo edición */}
-                {modoEdicion && (
-                    <>
-                        <View style={styles.separator} />
-                        <Text style={styles.separatorTitle}>Cambiar contraseña</Text>
-                        
-                        <View style={styles.campoContainer}>
-                            <Text style={styles.label}>Nueva contraseña</Text>
+                <View style={styles.formContainer}>
+                    {/* Primer nombre y Segundo nombre */}
+                    <View style={styles.rowContainer}>
+                        <View style={[styles.halfField, styles.marginRight]}>
+                            <Text style={styles.label}>Primer nombre</Text>
                             <TextInput
-                                style={styles.input}
-                                value={formData.nueva_contrasena}
-                                onChangeText={(text) => handleInputChange('nueva_contrasena', text)}
-                                placeholder="********"
-                                secureTextEntry
+                                style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                                value={formData.pnombre_usuario}
+                                onChangeText={(text) => handleInputChange('pnombre_usuario', text)}
+                                placeholder="Primer nombre"
+                                editable={modoEdicion}
                             />
                         </View>
-
-                        <View style={styles.campoContainer}>
-                            <Text style={styles.label}>Confirmar nueva contraseña</Text>
+                        <View style={styles.halfField}>
+                            <Text style={styles.label}>Segundo nombre</Text>
                             <TextInput
-                                style={styles.input}
-                                value={formData.confirmar_contrasena}
-                                onChangeText={(text) => handleInputChange('confirmar_contrasena', text)}
-                                placeholder="********"
-                                secureTextEntry
+                                style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                                value={formData.snombre_usuario}
+                                onChangeText={(text) => handleInputChange('snombre_usuario', text)}
+                                placeholder="Segundo nombre"
+                                editable={modoEdicion}
                             />
                         </View>
-                    </>
-                )}
+                    </View>
 
-                {/* Botones de acción */}
-                <View style={styles.buttonContainer}>
-                    {!modoEdicion ? (
-                        <TouchableOpacity 
-                            style={styles.editarButton} 
-                            onPress={habilitarEdicion}
-                        >
-                            <Text style={styles.buttonText}>Editar perfil</Text>
-                        </TouchableOpacity>
-                    ) : (
+                    {/* Primer apellido y Segundo apellido */}
+                    <View style={styles.rowContainer}>
+                        <View style={[styles.halfField, styles.marginRight]}>
+                            <Text style={styles.label}>Primer apellido</Text>
+                            <TextInput
+                                style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                                value={formData.papellido_usuario}
+                                onChangeText={(text) => handleInputChange('papellido_usuario', text)}
+                                placeholder="Primer apellido"
+                                editable={modoEdicion}
+                            />
+                        </View>
+                        <View style={styles.halfField}>
+                            <Text style={styles.label}>Segundo apellido</Text>
+                            <TextInput
+                                style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                                value={formData.sapellido_usuario}
+                                onChangeText={(text) => handleInputChange('sapellido_usuario', text)}
+                                placeholder="Segundo apellido"
+                                editable={modoEdicion}
+                            />
+                        </View>
+                    </View>
+
+                    {/* Teléfono */}
+                    <View style={styles.campoContainer}>
+                        <Text style={styles.label}>Teléfono</Text>
+                        <TextInput
+                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                            value={formData.telefono_usuario}
+                            onChangeText={(text) => handleInputChange('telefono_usuario', text)}
+                            placeholder="04121208635"
+                            keyboardType="phone-pad"
+                            editable={modoEdicion}
+                        />
+                    </View>
+
+                    {/* Fecha de nacimiento */}
+                    <View style={styles.campoContainer}>
+                        <Text style={styles.label}>Fecha de nacimiento</Text>
+                        <TextInput
+                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                            value={formData.fecha_nacimiento_usuario}
+                            onChangeText={(text) => handleInputChange('fecha_nacimiento_usuario', text)}
+                            placeholder="06/03/2004"
+                            editable={modoEdicion}
+                        />
+                    </View>
+
+                    {/* Género */}
+                    <View style={styles.campoContainer}>
+                        <Text style={styles.label}>Género</Text>
+                        <View style={styles.generoContainer}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.generoBoton,
+                                    formData.genero_usuario === 'M' && styles.generoBotonActivo,
+                                    !modoEdicion && styles.generoBotonBloqueado
+                                ]}
+                                onPress={() => modoEdicion && handleInputChange('genero_usuario', 'M')}
+                                disabled={!modoEdicion}
+                            >
+                                <Text style={[
+                                    styles.generoTexto,
+                                    formData.genero_usuario === 'M' && styles.generoTextoActivo
+                                ]}>Masculino</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.generoBoton,
+                                    formData.genero_usuario === 'F' && styles.generoBotonActivo,
+                                    !modoEdicion && styles.generoBotonBloqueado
+                                ]}
+                                onPress={() => modoEdicion && handleInputChange('genero_usuario', 'F')}
+                                disabled={!modoEdicion}
+                            >
+                                <Text style={[
+                                    styles.generoTexto,
+                                    formData.genero_usuario === 'F' && styles.generoTextoActivo
+                                ]}>Femenino</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.generoBoton,
+                                    formData.genero_usuario === 'Otro' && styles.generoBotonActivo,
+                                    !modoEdicion && styles.generoBotonBloqueado
+                                ]}
+                                onPress={() => modoEdicion && handleInputChange('genero_usuario', 'Otro')}
+                                disabled={!modoEdicion}
+                            >
+                                <Text style={[
+                                    styles.generoTexto,
+                                    formData.genero_usuario === 'Otro' && styles.generoTextoActivo
+                                ]}>Otro</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Cédula */}
+                    <View style={styles.campoContainer}>
+                        <Text style={styles.label}>Cédula</Text>
+                        <TextInput
+                            style={[styles.input, !modoEdicion && styles.inputBloqueado]}
+                            value={formData.cedula_usuario}
+                            onChangeText={(text) => handleInputChange('cedula_usuario', text)}
+                            placeholder="30890595"
+                            keyboardType="numeric"
+                            editable={modoEdicion}
+                        />
+                    </View>
+
+                    {/* Peso y Altura */}
+                    <View style={styles.rowContainer}>
+                        <View style={[styles.halfField, styles.marginRight]}>
+                            <Text style={styles.label}>Peso (kg)</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={formData.peso}
+                                onChangeText={(text) => handleInputChange('peso', text)}
+                                placeholder="70.0"
+                                keyboardType="numeric"
+                                editable={true}
+                            />
+                        </View>
+                        <View style={styles.halfField}>
+                            <Text style={styles.label}>Altura (cm)</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={formData.altura}
+                                onChangeText={(text) => handleInputChange('altura', text)}
+                                placeholder="186.0"
+                                keyboardType="numeric"
+                                editable={true}
+                            />
+                        </View>
+                    </View>
+
+                    {/* Cambiar contraseña - Solo en modo edición */}
+                    {modoEdicion && (
                         <>
-                            <TouchableOpacity 
-                                style={styles.cancelarButton} 
-                                onPress={cancelarEdicion}
-                                disabled={guardando}
-                            >
-                                <Text style={styles.buttonText}>Cancelar</Text>
-                            </TouchableOpacity>
+                            <View style={styles.separator} />
+                            <Text style={styles.separatorTitle}>Cambiar contraseña</Text>
                             
-                            <TouchableOpacity 
-                                style={styles.guardarButton} 
-                                onPress={handleGuardar}
-                                disabled={guardando}
-                            >
-                                {guardando ? (
-                                    <ActivityIndicator color="#fff" />
-                                ) : (
-                                    <Text style={styles.buttonText}>Guardar cambios</Text>
-                                )}
-                            </TouchableOpacity>
+                            <View style={styles.campoContainer}>
+                                <Text style={styles.label}>Nueva contraseña</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={formData.nueva_contrasena}
+                                    onChangeText={(text) => handleInputChange('nueva_contrasena', text)}
+                                    placeholder="********"
+                                    secureTextEntry
+                                />
+                            </View>
+
+                            <View style={styles.campoContainer}>
+                                <Text style={styles.label}>Confirmar nueva contraseña</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={formData.confirmar_contrasena}
+                                    onChangeText={(text) => handleInputChange('confirmar_contrasena', text)}
+                                    placeholder="********"
+                                    secureTextEntry
+                                />
+                            </View>
                         </>
                     )}
-                </View>
 
-                {/* Botón de Cerrar Sesión - Mismo estilo que tu BotonRojo */}
-                <TouchableOpacity 
-                    style={styles.cerrarSesionButton} 
-                    onPress={handleCerrarSesion}
-                >
-                    <Text style={styles.cerrarSesionButtonText}>CERRAR SESIÓN</Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
+                    {/* Botones de acción */}
+                    <View style={styles.buttonContainer}>
+                        {!modoEdicion ? (
+                            <BotonRojo titulo="Editar Perfil" onPress={habilitarEdicion} style={styles.botonGrid} />
+                        ) : (
+                            <>
+                                <BotonGris titulo="Cancelar" onPress={cancelarEdicion} style={styles.botonGrid} disabled ={guardando} />
+
+                                <BotonRojo titulo="Guardar Cambios" onPress={handleGuardar} style={styles.botonGrid} disabled ={guardando}/>
+                                
+                            </>
+                        )}
+                    </View>
+
+                    {/* Botón de Cerrar Sesión */}
+                    <BotonGris titulo="Cerrar Sesión" onPress={handleCerrarSesion} style={styles.botonGrid} />
+
+                </View>
+            </ScrollView>
+        </View>    
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#fff', 
+    },
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
@@ -515,11 +514,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     generoBotonActivo: {
-        backgroundColor: '#FF3B30',
-        borderColor: '#FF3B30',
-    },
-    generoBotonBloqueado: {
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#e60000',
     },
     generoTexto: {
         fontSize: 14,
@@ -572,7 +567,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    // Botón de cerrar sesión - Mismo estilo que tu BotonRojo
     cerrarSesionButton: {
         backgroundColor: '#FF3B30',
         borderRadius: 8,
