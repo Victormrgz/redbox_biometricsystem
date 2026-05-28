@@ -1,29 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-/**
- * CardRecordsPersonales - Muestra una tabla de récords personales.
- * 
- * @param {Array} data - Lista de objetos con movimiento, peso y fecha.
- */
-const CardRecordsPersonales = ({ data = [] }) => {
+const CardRecordsPersonales = ({ data }) => {
     return (
-        <View style={styles.card}>
-            {/* Encabezado */}
-            <View style={styles.headerRow}>
-                <Text style={styles.colTitulo}>Movimiento</Text>
-                <Text style={styles.colTitulo}>Peso</Text>
-                <Text style={styles.colTitulo}>Fecha</Text>
-            </View>
-
-            {/* Filas de datos */}
-            {data.map((item, index) => (
-                <View key={index}>
-                    {index > 0 && <View style={styles.separator} />}
-                    <View style={styles.dataRow}>
-                        <Text style={styles.colDatos}>{item.movimiento}</Text>
-                        <Text style={styles.colDatos}>{item.peso}</Text>
-                        <Text style={styles.colDatos}>{item.fecha}</Text>
+        <View style={styles.container}>
+            {data.map((record, index) => (
+                <View key={index} style={styles.card}>
+                    <View style={styles.row}>
+                        <Text style={styles.movimiento}>{record.movimiento}</Text>
+                        <Text style={styles.peso}>{record.peso}</Text>
+                    </View>
+                    <View style={styles.row}>
+                        <Text style={styles.fecha}>📅 {record.fecha}</Text>
+                        <Text style={styles.detalles}>🔄 {record.rondas} rondas • 🔁 {record.repeticiones} reps</Text>
                     </View>
                 </View>
             ))}
@@ -32,39 +21,40 @@ const CardRecordsPersonales = ({ data = [] }) => {
 };
 
 const styles = StyleSheet.create({
+    container: {
+        marginTop: 10,
+    },
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f5f5f5',
         borderRadius: 10,
         padding: 15,
-        marginVertical: 10,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
     },
-    headerRow: {
+    row: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 5,
     },
-    dataRow: {
-        flexDirection: 'row',
-        paddingVertical: 8,
-    },
-    colTitulo: {
-        flex: 1,
+    movimiento: {
+        fontSize: 16,
         fontWeight: 'bold',
-        color: '#000',
-        fontSize: 14,
+        color: '#333',
     },
-    colDatos: {
-        flex: 1,
-        color: '#444',
-        fontSize: 14,
+    peso: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#e60000',
     },
-    separator: {
-        height: 1,
-        backgroundColor: '#eee',
+    fecha: {
+        fontSize: 12,
+        color: '#666',
+    },
+    detalles: {
+        fontSize: 12,
+        color: '#666',
     },
 });
 
