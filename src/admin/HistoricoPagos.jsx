@@ -79,7 +79,7 @@ const HistorialPagos = () => {
     const colorEstado = (estado) => {
         if (estado === 'Completado') return '#27ae60';
         if (estado === 'Pendiente') return '#f39c12';
-        return '#e74c3c';
+        return '#e60000';
     };
 
     return (
@@ -158,7 +158,7 @@ const HistorialPagos = () => {
 
                     {/* LISTA DE PAGOS */}
                     {cargando ? (
-                        <ActivityIndicator color="#FF4D4D" size="large" style={{ marginTop: 40 }} />
+                        <ActivityIndicator color="#e60000" size="large" style={{ marginTop: 40 }} />
                     ) : pagos.length === 0 ? (
                         <Text style={styles.textoVacio}>No hay pagos registrados.</Text>
                     ) : (
@@ -201,9 +201,16 @@ const HistorialPagos = () => {
 };
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#fff' },
-    container: { flex: 1 },
-    content: { paddingHorizontal: 16, paddingBottom: 30 },
+    safeArea: { 
+        flex: 1, 
+        backgroundColor: '#fff' 
+    },
+    container: { 
+        flex: 1 
+    },
+    content: { paddingHorizontal: 16, 
+        paddingBottom: 30 
+    },
     filtrosCard: {
         backgroundColor: '#fafafa',
         borderRadius: 12,
@@ -212,8 +219,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#eee',
     },
-    filtroItem: { marginBottom: 10 },
-    filtroLabel: { fontSize: 12, fontWeight: '600', color: '#555', marginBottom: 4 },
+    filtroItem: { 
+        marginBottom: 10 
+    },
+    filtroLabel: { 
+        fontSize: 12, 
+        fontWeight: '600', 
+        color: '#555', 
+        marginBottom: 4 
+    },
     pickerWrapper: {
         borderWidth: 1,
         borderColor: '#ddd',
@@ -231,10 +245,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    botonesRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    botonesRow: { flexDirection: 'row', 
+        gap: 8, 
+        marginTop: 4 
+    },
     botonFiltrar: {
         flex: 1,
-        backgroundColor: '#FF4D4D',
+        backgroundColor: '#e60000',
         borderRadius: 8,
         padding: 12,
         alignItems: 'center',
@@ -248,8 +265,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ddd',
     },
-    textoBoton: { color: '#fff', fontWeight: 'bold' },
-    textoBotonLimpiar: { color: '#666', fontWeight: 'bold' },
+    textoBoton: { 
+        color: '#fff', 
+        fontWeight: 'bold' 
+    },
+    textoBotonLimpiar: { 
+        color: '#666',
+        fontWeight: 'bold' 
+    },
     card: {
         backgroundColor: '#fff',
         borderRadius: 12,
@@ -266,14 +289,44 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
     },
-    nombreUsuario: { fontSize: 15, fontWeight: 'bold', color: '#1a1a1a' },
-    badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-    badgeTexto: { fontSize: 12, fontWeight: '600' },
-    separador: { height: 1, backgroundColor: '#f0f0f0', marginBottom: 10 },
-    fila: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-    filaLabel: { fontSize: 13, color: '#666' },
-    filaValor: { fontSize: 13, fontWeight: '600', color: '#1a1a1a' },
-    textoVacio: { color: '#999', textAlign: 'center', marginTop: 40 },
+    nombreUsuario: { 
+        fontSize: 15, 
+        fontWeight: 'bold', 
+        color: '#1a1a1a' 
+    },
+    badge: {
+        paddingHorizontal: 10, 
+        paddingVertical: 3, 
+        borderRadius: 20 
+    },
+    badgeTexto: { 
+        fontSize: 12, 
+        fontWeight: '600' 
+    },
+    separador: { 
+        height: 1, 
+        backgroundColor: '#f0f0f0', 
+        marginBottom: 10 
+    },
+    fila: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        paddingVertical: 4 
+    },
+    filaLabel: { 
+        fontSize: 13, 
+        color: '#666' 
+    },
+    filaValor: { 
+        fontSize: 13, 
+        fontWeight: '600', 
+        color: '#1a1a1a' 
+    },
+    textoVacio: { 
+        color: '#999', 
+        textAlign: 'center', 
+        marginTop: 40 
+    },
 });
 
 export default HistorialPagos;

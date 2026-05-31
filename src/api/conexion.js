@@ -102,3 +102,19 @@ export const editarMiPerfil = async (datos, token) => {
     });
     return respuesta.data;
 };
+
+// Gestionar Roles
+export const getUsuariosConRoles = async (token) => {
+    const respuesta = await redBoxApi.get('/usuarios_con_roles/', {
+        headers: { Authorization: `Token ${token}` }
+    });
+    return respuesta.data;
+};
+
+export const asignarRol = async (idUsuario, rol, token) => {
+    const respuesta = await redBoxApi.put(`/asignar_rol/${idUsuario}/`, 
+        { rol: rol },
+        { headers: { Authorization: `Token ${token}` } }
+    );
+    return respuesta.data;
+};

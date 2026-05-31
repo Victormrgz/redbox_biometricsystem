@@ -1,8 +1,6 @@
-import React, { useState, useContext, useCallback } from 'react';
-// ✅ IMPORTANTE: Todo lo de react-native va en una sola línea
+import React, { useState, useContext, useCallback, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native'; 
 import HeaderColor from '../componentes/HeaderColor';
-import Constants from 'expo-constants';
 import { useNavigation, useFocusEffect} from '@react-navigation/native';
 import BotonRojo from '../componentes/BotonRojo';
 import BotonGris from '../componentes/BotonGris';
@@ -14,19 +12,68 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { redBoxApi } from '../api/conexion';
 import { AuthContext } from '../auth/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import useRoles from '../hooks/useRoles';
 
 function Inicio() {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const { usuario, actualizarUsuario, cargandoAuth } = useContext(AuthContext);
-    console.log("DATOS DEL USUARIO EN INICIO:", usuario);
+    const { esAdministrador, esEntrenador, esUsuario, rol } = useRoles();
     const [reservas, setReservas] = useState([]);
     const [cargandoReservas, setCargandoReservas] = useState(true);
+    const [imc, setImc] = useState(null);
+    const [clasificacionIMC, setClasificacionIMC] = useState('');
+    const [colorIMC, setColorIMC] = useState('');
 
-    // 2. Función para cargar las reservas
+    // Función para calcular el IMC
+    const calcularIMC = (peso, altura) => {
+        if (!peso || !altura || altura <= 0 || peso <= 0) {
+            setImc(null);
+            setClasificacionIMC('No disponible');
+            setColorIMC('#999');
+            return;
+        }
+        
+        const alturaEnMetros = altura / 100;
+        const imcCalculado = peso / (alturaEnMetros * alturaEnMetros);
+        const imcRedondeado = imcCalculado.toFixed(2);
+        setImc(imcRedondeado);
+        
+        let clasificacion = '';
+        let color = '';
+        
+        if (imcCalculado < 18.5) {
+            clasificacion = 'Bajo peso';
+            color = '#FFA500';
+        } else if (imcCalculado >= 18.5 && imcCalculado < 25) {
+            clasificacion = 'Normal';
+            color = '#2D733C';
+        } else if (imcCalculado >= 25 && imcCalculado < 30) {
+            clasificacion = 'Sobrepeso';
+            color = '#FFA500';
+        } else if (imcCalculado >= 30 && imcCalculado < 35) {
+            clasificacion = 'Obesidad I';
+            color = '#FF6B6B';
+        } else if (imcCalculado >= 35 && imcCalculado < 40) {
+            clasificacion = 'Obesidad II';
+            color = '#FF3B30';
+        } else if (imcCalculado >= 40) {
+            clasificacion = 'Obesidad III (Mórbida)';
+            color = '#CC0000';
+        }
+        
+        setClasificacionIMC(clasificacion);
+        setColorIMC(color);
+    };
+
+    useEffect(() => {
+        if (usuario && usuario.peso && usuario.altura) {
+            calcularIMC(parseFloat(usuario.peso), parseFloat(usuario.altura));
+        }
+    }, [usuario]);
+
     const obtenerReservas = async () => {
-        setCargandoReservas(true); // Mostrar carga mientras se actualiza
+        setCargandoReservas(true);
         try {
             const id = await AsyncStorage.getItem('userId');
             if (id) {
@@ -50,18 +97,14 @@ function Inicio() {
                     text: "Sí, cancelar", 
                     style: "destructive",
                     onPress: async () => {
-                        console.log("Intentando cancelar clase con ID:", idClase);
                         try {
-                            // Llamamos al método @action 'cancelar' definido en el ViewSet
                             await redBoxApi.post(`/clases/${idClase}/cancelar/`);
-                            
                             Alert.alert("Éxito", "Clase cancelada correctamente.");
-                            
-                            actualizarUsuario(); // Actualiza créditos globalmente
-                            obtenerReservas(); // Refrescamos la lista de reservas automáticamente
+                            actualizarUsuario();
+                            obtenerReservas();
                         } catch (error) {
                             console.error("Error al cancelar:", error);
-                            Alert.alert("Error", "No se pudo cancelar la clase en este momento.");
+                            Alert.alert("Error", "No se pudo cancelar la clase.");
                         }
                     }
                 }
@@ -72,20 +115,21 @@ function Inicio() {
     useFocusEffect(
         useCallback(() => {
             const verificarYRefrescar = async () => {
-                // Si el usuario llega como null, forzamos al contexto a buscar en AsyncStorage
                 if (!usuario) {
                     await actualizarUsuario();
                 }
                 obtenerReservas();
             };
-
             verificarYRefrescar();
-        }, [usuario]) // Se dispara si el usuario cambia o la pantalla toma foco
+        }, [usuario])
     );
 
     const fechaActual = new Date().toLocaleDateString('es-ES', {
         day: '2-digit', month: '2-digit', year: 'numeric'
     });
+
+    // Mostrar rol del usuario para debug
+    console.log('Rol del usuario:', rol);
 
     return (
         <View style={[styles.safeArea, { paddingTop: insets.top }]}>
@@ -95,7 +139,9 @@ function Inicio() {
                     {cargandoAuth ? (
                         <ActivityIndicator color="red" size="small" />
                     ) : (
-                        <TituloPrincipal titulo={`Hola ${usuario?.pnombre_usuario || 'Usuario'}`} />
+                        <>
+                            <TituloPrincipal titulo={`Hola ${usuario?.pnombre_usuario || 'Usuario'}`} />
+                        </>
                     )}
 
                     <TituloSecundario titulo="Bienvenido al panel de control" />
@@ -103,7 +149,18 @@ function Inicio() {
 
                     <View style={styles.IMC}>
                         <Text style={styles.titulo_IMC}>
-                            Tu IMC actual: <Text style={styles.numero}>20.23</Text> <Text style={styles.normal}>(Normal)</Text>
+                            Tu IMC actual: {' '}
+                            {imc ? (
+                                <>
+                                    <Text style={styles.numero}>{imc}</Text>
+                                    {' '}
+                                    <Text style={[styles.clasificacion, { color: colorIMC }]}>
+                                        ({clasificacionIMC})
+                                    </Text>
+                                </>
+                            ) : (
+                                <Text style={styles.sinDatos}>Actualiza tu peso y altura en Editar Perfil</Text>
+                            )}
                         </Text>
                     </View>
 
@@ -118,7 +175,6 @@ function Inicio() {
                                     key={index}
                                     fecha={new Date(reserva.fecha_clase).toLocaleDateString('es-ES')} 
                                     hora={reserva.hora_inicio_clase ? reserva.hora_inicio_clase.substring(0, 5) : '--:--'} 
-                                    // 3. PASAMOS LA PROPS
                                     onCancelar={() => handleCancelar(reserva.id_clase)} 
                                 />
                             ))
@@ -127,18 +183,54 @@ function Inicio() {
                         )}
                     </View>
 
+                    {/* BOTONES SEGÚN ROL */}
                     <View style={styles.containerMenu}>
-                        <View style={styles.row}>
-                            <BotonRojo titulo="Crear Planificación" onPress={() => navigation.navigate('CrearPlanificacion')} style={styles.botonGrid} />
-                            <BotonRojo titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonGrid} />
-                        </View>
-                        <View style={styles.row}>
-                            <BotonGris titulo="Editar Perfil" onPress={() => navigation.navigate('Perfil')} style={styles.botonGrid} />
-                            <BotonGris titulo="Gestionar Roles" onPress={() => navigation.navigate('GestionarRoles')} style={styles.botonGrid} />
-                        </View>
-                        <BotonBlanco titulo="Registrar Pago" onPress={() => navigation.navigate('RegistrarPago')} style={styles.botonFull} />
-                        <BotonBlanco titulo="Historial de pagos" onPress={() => navigation.navigate('HistoricoPagos')} style={styles.botonFull} />
-                        <BotonBlanco titulo="Suscripciones" onPress={() => navigation.navigate('Suscripciones')} style={styles.botonFull} />
+                        
+                        {/* BOTONES PARA ADMINISTRADOR */}
+                        {esAdministrador() && (
+                            <>
+                                <View style={styles.row}>
+                                    <BotonRojo titulo="Crear Planificación" onPress={() => navigation.navigate('CrearPlanificacion')} style={styles.botonGrid} />
+                                    <BotonRojo titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonGrid} />
+                                </View>
+                                <View style={styles.row}>
+                                    <BotonGris titulo="Editar Perfil" onPress={() => navigation.navigate('Perfil')} style={styles.botonGrid} />
+                                    <BotonGris titulo="Gestionar Roles" onPress={() => navigation.navigate('GestionarRoles')} style={styles.botonGrid} />
+                                </View>
+                                <BotonBlanco titulo="Registrar Pago" onPress={() => navigation.navigate('RegistrarPago')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Historial de pagos" onPress={() => navigation.navigate('HistoricoPagos')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Suscripciones" onPress={() => navigation.navigate('Suscripciones')} style={styles.botonFull} />
+                            </>
+                        )}
+
+                        {/* BOTONES PARA ENTRENADOR */}
+                        {esEntrenador() && (
+                            <>
+                                <View style={styles.row}>
+                                    <BotonRojo titulo="Crear Planificación" onPress={() => navigation.navigate('CrearPlanificacion')} style={styles.botonGrid} />
+                                    <BotonRojo titulo="Mis Alumnos" onPress={() => navigation.navigate('MisAlumnos')} style={styles.botonGrid} />
+                                </View>
+                                <View style={styles.row}>
+                                    <BotonGris titulo="Editar Perfil" onPress={() => navigation.navigate('Perfil')} style={styles.botonGrid} />
+                                    <BotonGris titulo="Gestionar Clases" onPress={() => navigation.navigate('GestionarClases')} style={styles.botonGrid} />
+                                </View>
+                                <BotonBlanco titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Resultados Alumnos" onPress={() => navigation.navigate('ResultadosAlumnos')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Suscripciones Alumnos" onPress={() => navigation.navigate('SuscripcionesAlumnos')} style={styles.botonFull} />
+                            </>
+                        )}
+
+                        {/* BOTONES PARA USUARIO NORMAL */}
+                        {esUsuario() && (
+                            <>
+                                <View style={styles.row}>
+                                    <BotonGris titulo="Editar Perfil" onPress={() => navigation.navigate('Perfil')} style={styles.botonGrid} />
+                                    <BotonGris titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonGrid} />
+                                </View>
+                                <BotonBlanco titulo="Historial de pagos" onPress={() => navigation.navigate('HistoricoPagos')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Mi Suscripción" onPress={() => navigation.navigate('Suscripciones')} style={styles.botonFull} />
+                            </>
+                        )}
                     </View>
                 </View>
             </ScrollView>
@@ -154,11 +246,21 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        
     },
     content: {
         flex: 1,
         padding: 20,
+    },
+    rolBadge: {
+        backgroundColor: '#f0f0f0',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 15,
+        fontSize: 12,
+        textAlign: 'center',
+        alignSelf: 'flex-start',
+        marginTop: 5,
+        color: '#666',
     },
     IMC: {
         marginVertical: 20,
@@ -172,10 +274,16 @@ const styles = StyleSheet.create({
     numero: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: '#333',
     },
-    normal: {
-        fontSize: 16,
-        color: '#2D733C',
+    clasificacion: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    sinDatos: {
+        fontSize: 14,
+        color: '#999',
+        fontStyle: 'italic',
     },
     titulo_reservas: {
         fontSize: 20,
@@ -192,29 +300,21 @@ const styles = StyleSheet.create({
         paddingTop: 10,
     },
     sinReservas: {
-    },  
-    
-    titulo_cancelar: {  
-        fontSize: 10,             
+        color: '#999',
         textAlign: 'center',
-        fontWeight: 'bold',
-        color: '#FF4D4D',
-    },
+        marginTop: 20,
+    },  
     row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
     },
     botonGrid: {
-        flex: 0.48, // Ocupa casi el 50% de la fila para permitir el espacio entre botones
+        flex: 0.48,
     },
     botonFull: {
         width: '100%',
         marginBottom: 10,
-    },
-    content: {
-        flex: 1,
-        padding: 20,
     },
 });
 
