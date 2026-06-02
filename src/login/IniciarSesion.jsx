@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     icono: {
         position: 'absolute',
         right: 15,
-        top: -8, // Ajuste manual según el padding del input
+        top: -20, 
     },
     link: {
         color: '#b71c1c',

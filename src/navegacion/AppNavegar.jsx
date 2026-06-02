@@ -73,15 +73,12 @@ function MyTabs() {
                     headerShown: false,
                 }}
             />
-            
-            
-            
         </Tab.Navigator>
     );
 }
 
 export default function AppNavegar() {
-    // Aquí puedes manejar el estado de autenticación real
+    
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     return (
