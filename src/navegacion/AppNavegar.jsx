@@ -19,6 +19,9 @@ import HistoricoPagos from "../admin/HistoricoPagos";
 import Suscripciones from "../admin/Suscripciones";
 import CrearCuenta from "../login/CrearCuenta";
 import IniciarSesion from "../login/IniciarSesion";
+import MisAlumnos from "../entrenador/MisAlumnos";
+import GestionarClases from "../entrenador/GestionarClases";
+import ResultadosAlumnos from "../entrenador/ResultadosAlumnos";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -100,15 +103,14 @@ export default function AppNavegar() {
                         <Stack.Screen name="Main" component={MyTabs} />
                         <Stack.Screen name="CrearPlanificacion" component={CrearPlanificacion} />
                         <Stack.Screen name="VerPlanificacion" component={VerPlanificacion} />
-                        <Stack.Screen 
-                            name="Perfil" 
-                            component={Perfil} 
-                            initialParams={{ setIsAuthenticated }} 
-                        />
+                        <Stack.Screen name="Perfil" component={Perfil} initialParams={{ setIsAuthenticated }} />
                         <Stack.Screen name="GestionarRoles" component={GestionarRoles} />
                         <Stack.Screen name="RegistrarPago" component={RegistrarPago} />
                         <Stack.Screen name="HistoricoPagos" component={HistoricoPagos} />
                         <Stack.Screen name="Suscripciones" component={Suscripciones} />
+                        <Stack.Screen name="MisAlumnos" component={MisAlumnos} />
+                        <Stack.Screen name="GestionarClases" component={GestionarClases} />
+                        <Stack.Screen name="ResultadosAlumnos" component={ResultadosAlumnos} />
                     </>
                 )}
             </Stack.Navigator>
