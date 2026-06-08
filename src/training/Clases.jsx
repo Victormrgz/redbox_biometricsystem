@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import HeaderColor from '../componentes/HeaderColor';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,9 +9,10 @@ import { useNavigation } from '@react-navigation/native';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
 import TituloTerciario from '../componentes/TituloTerciario';
-import { crearClases, getUsuariosEnClase } from '../api/conexion';
+import { crearClases, getUsuariosEnClase, redBoxApi } from '../api/conexion';
 import { AuthContext } from '../auth/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Clases = () => {
     const insets = useSafeAreaInsets();
@@ -22,11 +23,19 @@ const Clases = () => {
     const [cargando, setCargando] = useState(false);
     const [usuariosEnClase, setUsuariosEnClase] = useState([]);
     const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+    const [entrenadorAsignado, setEntrenadorAsignado] = useState(null);
+    const [cargandoEntrenador, setCargandoEntrenador] = useState(false);
 
     const [formData, setFormData] = useState({
         date: new Date(),
         time: new Date(),
     });
+
+    // Horarios disponibles (solo en punto)
+    const horariosDisponibles = [
+        '06:00', '07:00', '08:00', '09:00', '10:00',
+        '15:00', '16:00', '17:00', '18:00', '19:00'
+    ];
 
     const formatearFechaParaDjango = (fecha) => {
         const anio = fecha.getFullYear();
@@ -39,6 +48,44 @@ const Clases = () => {
         hour: '2-digit', minute: '2-digit', hour12: false
     });
 
+    // Validar si la hora es válida (solo en punto)
+    const esHoraValida = (hora) => {
+        const horasPermitidas = [6,7,8,9,10,15,16,17,18,19];
+        return horasPermitidas.includes(hora.getHours()) && hora.getMinutes() === 0;
+    };
+
+    const obtenerEntrenador = async (fecha, hora) => {
+        try {
+            setCargandoEntrenador(true);
+            const token = await AsyncStorage.getItem('userToken');
+            const fechaStr = formatearFechaParaDjango(fecha);
+            const horaStr = convertirHora24(hora);
+            
+            console.log("=== BUSCANDO ENTRENADOR ===");
+            console.log("Fecha:", fechaStr);
+            console.log("Hora:", horaStr);
+            
+            const response = await redBoxApi.get(
+                `/obtener_entrenador_por_horario/?fecha=${fechaStr}&hora=${horaStr}`,
+                { headers: { Authorization: `Token ${token}` } }
+            );
+            
+            console.log("Respuesta del servidor:", response.data);
+            
+            if (response.data && !response.data.id_entrenador) {
+                console.log("No hay entrenador asignado");
+                setEntrenadorAsignado({ nombre: 'Por asignar', id_entrenador: null });
+            } else {
+                console.log("Entrenador encontrado:", response.data.nombre);
+                setEntrenadorAsignado(response.data);
+            }
+        } catch (error) {
+            console.error('Error obteniendo entrenador:', error);
+            setEntrenadorAsignado({ nombre: 'Por asignar', id_entrenador: null });
+        } finally {
+            setCargandoEntrenador(false);
+        }
+    };
     // Máximo 5 días desde hoy
     const fechaMaxima = new Date();
     fechaMaxima.setDate(fechaMaxima.getDate() + 5);
@@ -49,14 +96,59 @@ const Clases = () => {
         const fechaLocal = new Date(selectedDate);
         fechaLocal.setHours(12, 0, 0, 0);
         setFormData({ ...formData, date: fechaLocal });
-        // Recargar usuarios si ya hay hora seleccionada
-        cargarUsuariosEnClase(fechaLocal, formData.time);
+        
+        // Si ya hay hora seleccionada, buscar entrenador
+        if (formData.time) {
+            obtenerEntrenador(fechaLocal, formData.time);
+            cargarUsuariosEnClase(fechaLocal, formData.time);
+        }
     };
+
+    // Función para convertir hora AM/PM a formato 24 horas
+    const convertirHora24 = (fecha) => {
+        let horas = fecha.getHours();
+        const minutos = fecha.getMinutes();
+        return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+    };
+
+    // Función para formatear hora en 12 horas para mostrar
+    const formatoHora12 = (fecha) => {
+        let horas = fecha.getHours();
+        const minutos = fecha.getMinutes();
+        const ampm = horas >= 12 ? 'PM' : 'AM';
+        horas = horas % 12;
+        horas = horas ? horas : 12; // la hora 0 debe mostrarse como 12
+        const minutosStr = minutos < 10 ? '0' + minutos : minutos;
+        return `${horas}:${minutosStr} ${ampm}`;
+    };
+
 
     const onChangeTime = (event, selectedTime) => {
         setShowTime(false);
         if (!selectedTime) return;
 
+        // Obtener hora en formato 24 horas
+        const hora24 = selectedTime.getHours();
+        const minutos = selectedTime.getMinutes();
+        
+        console.log("Hora seleccionada (24h):", hora24);
+        console.log("Minutos:", minutos);
+
+        // Validar que sea una hora válida (en punto y dentro del rango)
+        if (minutos !== 0) {
+            Alert.alert("Horario no permitido", "Las clases son solo en horario: 6:00 AM, 7:00 AM, 8:00 AM, 9:00 AM, 10:00 AM, 3:00 PM, 4:00 PM, 5:00 PM, 06:00 PM, 7:00 PM");
+            return;
+        }
+
+        // Horas permitidas en formato 24 horas
+        const horasPermitidas = [6,7,8,9,10,15,16,17,18,19];
+        
+        if (!horasPermitidas.includes(hora24)) {
+            Alert.alert("Horario no permitido", "Las clases son de 6:00 AM a 7:00 PM. Horas permitidas: 6,7,8,9,10,3PM,4PM,5PM,6PM,7P)");
+            return;
+        }
+
+        // Validar que no sea una hora pasada si es hoy
         const ahora = new Date();
         if (formData.date.toDateString() === ahora.toDateString()) {
             if (selectedTime.getTime() < ahora.getTime()) {
@@ -65,22 +157,20 @@ const Clases = () => {
             }
         }
 
-        // Validar rango 6am - 7pm
-        const hora = selectedTime.getHours();
-        if (hora < 6 || hora >= 19) {
-            Alert.alert("Horario no permitido", "Las clases son de 6:00 AM a 7:00 PM.");
-            return;
-        }
-
         setFormData({ ...formData, time: selectedTime });
+        
+        // Buscar entrenador para este horario (enviar hora en formato 24h)
+        obtenerEntrenador(formData.date, selectedTime);
         cargarUsuariosEnClase(formData.date, selectedTime);
     };
+
 
     const cargarUsuariosEnClase = async (fecha, hora) => {
         try {
             setCargandoUsuarios(true);
             const fechaStr = formatearFechaParaDjango(fecha);
-            const horaStr = formatoHora(hora);
+            const horaStr = convertirHora24(hora); // Usar formato 24 horas para la API
+            console.log("Buscando usuarios para hora:", horaStr);
             const clases = await getUsuariosEnClase(fechaStr, horaStr);
             setUsuariosEnClase(clases);
         } catch (error) {
@@ -92,8 +182,12 @@ const Clases = () => {
 
     const handleReservar = async () => {
         const horaSeleccionada = formData.time.getHours();
-        if (horaSeleccionada < 6 || horaSeleccionada >= 19) {
-            Alert.alert("Horario no permitido", "Las clases son de 6:00 AM a 7:00 PM.");
+        const minutosSeleccionados = formData.time.getMinutes();
+        
+        console.log("Hora seleccionada para reserva (24h):", horaSeleccionada);
+        
+        if (minutosSeleccionados !== 0 || ![6,7,8,9,10,11,12,13,14,15,16,17,18,19].includes(horaSeleccionada)) {
+            Alert.alert("Horario no permitido", "Las clases son solo en horario: 6:00 AM, 7:00 AM, 8:00 AM, 9:00 AM, 10:00 AM, 3:00 PM, 4:00 PM, 5:00 PM, 06:00 PM, 7:00 PM");
             return;
         }
 
@@ -126,16 +220,17 @@ const Clases = () => {
             const datosParaEnviar = {
                 id_usuario: usuario.id_usuario,
                 fecha_clase: formatearFechaParaDjango(formData.date),
-                hora_inicio_clase: formatoHora(horaInicio),
-                hora_fin_clase: formatoHora(horaFin),
+                hora_inicio_clase: convertirHora24(horaInicio), // Usar formato 24 horas
+                hora_fin_clase: convertirHora24(horaFin),
                 cupo_maximo_clase: 20,
                 descripcion_clase: "Entrenamiento de CrossFit"
             };
 
+            console.log("Datos a enviar:", datosParaEnviar);
+
             await crearClases(datosParaEnviar);
             await actualizarUsuario();
 
-            // Recargar lista de usuarios
             await cargarUsuariosEnClase(formData.date, formData.time);
 
             Alert.alert("¡Éxito!", "Clase reservada correctamente. Se descontó 1 crédito.");
@@ -148,14 +243,12 @@ const Clases = () => {
     };
 
     const handleCancelar = async () => {
-        // Verificar que el usuario tiene una clase en esa fecha y hora
         const miClase = usuariosEnClase.find(c => c.id_usuario === usuario?.id_usuario);
         if (!miClase) {
             Alert.alert("Sin reserva", "No tienes una clase reservada en este horario.");
             return;
         }
 
-        // Validar cancelación 30 min antes
         const ahora = new Date();
         const [horas, minutos] = miClase.hora_inicio_clase.split(':').map(Number);
         const fechaClase = new Date(formData.date);
@@ -228,7 +321,7 @@ const Clases = () => {
                             <TextInput
                                 placeholder='Seleccionar Hora'
                                 editable={false}
-                                value={formData.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                value={formatoHora12(formData.time)}
                                 style={{ color: '#000' }}
                             />
                             <MaterialIcons name="access-time" size={24} color="black" />
@@ -242,6 +335,18 @@ const Clases = () => {
                             />
                         )}
                     </View>
+
+                    {/* Mostrar entrenador asignado */}
+                    {cargandoEntrenador ? (
+                        <ActivityIndicator color="#FF4D4D" style={{ marginTop: 10 }} />
+                    ) : entrenadorAsignado && (
+                        <View style={styles.entrenadorContainer}>
+                            <MaterialIcons name="fitness-center" size={20} color="#FF3B30" />
+                            <Text style={styles.entrenadorTexto}>
+                                Entrenador: {entrenadorAsignado.nombre || 'Por asignar'}
+                            </Text>
+                        </View>
+                    )}
 
                     {/* BOTONES */}
                     {miClase ? (
@@ -314,6 +419,20 @@ const styles = StyleSheet.create({
     botonMargen: {
         marginTop: 20,
     },
+    entrenadorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF0F0',
+        padding: 12,
+        borderRadius: 10,
+        marginTop: 16,
+        gap: 10,
+    },
+    entrenadorTexto: {
+        fontSize: 14,
+        color: '#FF3B30',
+        fontWeight: '500',
+    },
     itemUsuario: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -330,10 +449,11 @@ const styles = StyleSheet.create({
         textAlign: 'right',
     },
     textoVacio: { 
-    color: '#999', 
-    fontSize: 13, 
-    marginTop: 8 
+        color: '#999', 
+        fontSize: 13, 
+        marginTop: 8 
     },
+    
     
 });
 
