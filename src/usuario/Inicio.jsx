@@ -200,6 +200,7 @@ function Inicio() {
                                 <BotonBlanco titulo="Registrar Pago" onPress={() => navigation.navigate('RegistrarPago')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Historial de pagos" onPress={() => navigation.navigate('HistoricoPagos')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Suscripciones" onPress={() => navigation.navigate('Suscripciones')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Horarios Entrenadores" onPress={() => navigation.navigate('GestionarHorarioEntrenador')} style={styles.botonFull} />    
                             </>
                         )}
 
