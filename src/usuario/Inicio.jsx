@@ -209,13 +209,13 @@ function Inicio() {
                             <>
                                 <View style={styles.row}>
                                     <BotonRojo titulo="Crear Planificación" onPress={() => navigation.navigate('CrearPlanificacion')} style={styles.botonGrid} />
-                                    <BotonRojo titulo="Mis Alumnos" onPress={() => navigation.navigate('MisAlumnos')} style={styles.botonGrid} />
+                                    <BotonRojo titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonGrid} />
                                 </View>
                                 <View style={styles.row}>
                                     <BotonGris titulo="Editar Perfil" onPress={() => navigation.navigate('Perfil')} style={styles.botonGrid} />
                                     <BotonGris titulo="Gestionar Clases" onPress={() => navigation.navigate('GestionarClases')} style={styles.botonGrid} />
                                 </View>
-                                <BotonBlanco titulo="Ver Planificación" onPress={() => navigation.navigate('VerPlanificacion')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Mis Horarios" onPress={() => navigation.navigate('VerHorarioEntrenador')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Resultados Alumnos" onPress={() => navigation.navigate('ResultadosAlumnos')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Suscripciones Alumnos" onPress={() => navigation.navigate('SuscripcionesAlumnos')} style={styles.botonFull} />
                             </>

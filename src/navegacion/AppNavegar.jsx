@@ -23,6 +23,7 @@ import MisAlumnos from "../entrenador/MisAlumnos";
 import GestionarClases from "../entrenador/GestionarClases";
 import ResultadosAlumnos from "../entrenador/ResultadosAlumnos";
 import GestionarHorarioEntrenador from '../admin/GestionarHorarioEntrenador';
+import VerHorarioEntrenador from '../entrenador/VerHorarioEntrenador';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -113,6 +114,8 @@ export default function AppNavegar() {
                         <Stack.Screen name="GestionarClases" component={GestionarClases} />
                         <Stack.Screen name="ResultadosAlumnos" component={ResultadosAlumnos} />
                         <Stack.Screen name="GestionarHorarioEntrenador" component={GestionarHorarioEntrenador} />
+                        <Stack.Screen name="VerHorarioEntrenador" component={VerHorarioEntrenador} />
+                        
                     </>
                 )}
             </Stack.Navigator>

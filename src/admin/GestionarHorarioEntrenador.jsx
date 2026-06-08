@@ -8,13 +8,16 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
-    Modal
+    Modal,
+    RefreshControl
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import HeaderColor from '../componentes/HeaderColor';
 import TituloPrincipal from '../componentes/TituloPrincipal';
 import TituloSecundario from '../componentes/TituloSecundario';
+import BotonRojo from '../componentes/BotonRojo';
+import BotonGris from '../componentes/BotonGris';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { redBoxApi } from '../api/conexion';
 import { AuthContext } from '../auth/AuthContext';
@@ -28,12 +31,15 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
     const [entrenadorSeleccionado, setEntrenadorSeleccionado] = useState(null);
     const [horarios, setHorarios] = useState([]);
     const [cargando, setCargando] = useState(true);
+    const [refrescando, setRefrescando] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
-    const [horasDisponibles, setHorasDisponibles] = useState([]);
     const [horasSeleccionadas, setHorasSeleccionadas] = useState([]);
     const [cargandoHorarios, setCargandoHorarios] = useState(false);
+    const [fechaFiltro, setFechaFiltro] = useState(null);
+    const [showFiltroDatePicker, setShowFiltroDatePicker] = useState(false);
+    const [asignando, setAsignando] = useState(false);
 
     // Horarios disponibles
     const horasManiana = [
@@ -43,7 +49,7 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
         { value: '09:00', label: '9:00 AM - 10:00 AM' },
         { value: '10:00', label: '10:00 AM - 11:00 AM' },
     ];
-    
+
     const horasTarde = [
         { value: '15:00', label: '3:00 PM - 4:00 PM' },
         { value: '16:00', label: '4:00 PM - 5:00 PM' },
@@ -53,6 +59,16 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
     ];
 
     const todasLasHoras = [...horasManiana, ...horasTarde];
+
+    const obtenerFechasLimite = () => {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fechaMinima = new Date(hoy);
+        fechaMinima.setDate(hoy.getDate() + 1);
+        const fechaMaxima = new Date(hoy);
+        fechaMaxima.setDate(hoy.getDate() + 5);
+        return { fechaMinima, fechaMaxima };
+    };
 
     useEffect(() => {
         if (!esAdministrador()) {
@@ -85,11 +101,13 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
             let url = `/horarios_entrenador/${idEntrenador}/`;
             if (fecha) {
                 const fechaStr = formatFechaAPI(fecha);
+                console.log("Cargando horarios para fecha UTC:", fechaStr);
                 url += `?fecha=${fechaStr}`;
             }
             const response = await redBoxApi.get(url, {
                 headers: { Authorization: `Token ${token}` }
             });
+            console.log("Horarios recibidos:", response.data);
             setHorarios(response.data);
         } catch (error) {
             console.error('Error:', error);
@@ -100,7 +118,17 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
 
     const seleccionarEntrenador = async (entrenador) => {
         setEntrenadorSeleccionado(entrenador);
+        setFechaFiltro(null);
         await cargarHorarios(entrenador.id_usuario);
+    };
+
+    const onRefresh = async () => {
+        setRefrescando(true);
+        await cargarEntrenadores();
+        if (entrenadorSeleccionado) {
+            await cargarHorarios(entrenadorSeleccionado.id_usuario, fechaFiltro);
+        }
+        setRefrescando(false);
     };
 
     const formatFecha = (date) => {
@@ -108,21 +136,37 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
         return date.toLocaleDateString('es-ES', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric'
+            year: 'numeric',
+            timeZone: 'UTC'
         });
     };
 
     const formatFechaAPI = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        if (!date) return '';
+        // Usar UTC para evitar problemas de zona horaria
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
 
+    const crearFechaUTC = (year, month, day) => {
+        return new Date(Date.UTC(year, month, day));
+    };
+
+    const formatHoraAMPM = (hora) => {
+        if (!hora) return '';
+        const [horas, minutos] = hora.split(':');
+        const horaNum = parseInt(horas);
+        const ampm = horaNum >= 12 ? 'PM' : 'AM';
+        const hora12 = horaNum % 12 || 12;
+        return `${hora12}:${minutos} ${ampm}`;
+    };
+
     const abrirModalAsignar = () => {
-        setFechaSeleccionada(new Date());
+        const { fechaMinima } = obtenerFechasLimite();
+        setFechaSeleccionada(fechaMinima);
         setHorasSeleccionadas([]);
-        setHorasDisponibles(todasLasHoras);
         setModalVisible(true);
     };
 
@@ -141,6 +185,7 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
         }
 
         try {
+            setAsignando(true);
             const token = await AsyncStorage.getItem('userToken');
             const fechaStr = formatFechaAPI(fechaSeleccionada);
             
@@ -154,10 +199,12 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
             
             Alert.alert('Éxito', `Se asignaron ${horasSeleccionadas.length} horarios`);
             setModalVisible(false);
-            await cargarHorarios(entrenadorSeleccionado.id_usuario);
+            await cargarHorarios(entrenadorSeleccionado.id_usuario, fechaFiltro);
         } catch (error) {
             console.error('Error:', error);
             Alert.alert('Error', error.response?.data?.error || 'No se pudo asignar el horario');
+        } finally {
+            setAsignando(false);
         }
     };
 
@@ -168,7 +215,7 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
-                    text: 'Eliminar',
+                    text: 'Sí, eliminar',
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -177,7 +224,7 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
                                 headers: { Authorization: `Token ${token}` }
                             });
                             Alert.alert('Éxito', 'Horario eliminado correctamente');
-                            await cargarHorarios(entrenadorSeleccionado.id_usuario, fechaSeleccionada);
+                            await cargarHorarios(entrenadorSeleccionado.id_usuario, fechaFiltro);
                         } catch (error) {
                             console.error('Error:', error);
                             Alert.alert('Error', 'No se pudo eliminar el horario');
@@ -188,19 +235,43 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
         );
     };
 
-    const filtrarHorariosPorFecha = async (fecha) => {
-        if (entrenadorSeleccionado) {
-            await cargarHorarios(entrenadorSeleccionado.id_usuario, fecha);
-        }
-    };
-
-    const handleDateChange = async (event, selectedDate) => {
+    const handleDateChange = (event, selectedDate) => {
         setShowDatePicker(false);
         if (selectedDate) {
             setFechaSeleccionada(selectedDate);
-            await filtrarHorariosPorFecha(selectedDate);
         }
     };
+
+    const handleFiltroDateChange = (event, selectedDate) => {
+        setShowFiltroDatePicker(false);
+        if (selectedDate) {
+            // Crear una nueva fecha fija a las 12:00 UTC para evitar desfases
+            const fechaFija = new Date(Date.UTC(
+                selectedDate.getFullYear(),
+                selectedDate.getMonth(),
+                selectedDate.getDate()
+            ));
+            setFechaFiltro(fechaFija);
+        }
+    };
+
+    const aplicarFiltroFecha = async () => {
+        if (entrenadorSeleccionado && fechaFiltro) {
+            // Enviar la fecha en formato UTC YYYY-MM-DD
+            const fechaStr = formatFechaAPI(fechaFiltro);
+            console.log("Filtrando por fecha UTC:", fechaStr);
+            await cargarHorarios(entrenadorSeleccionado.id_usuario, fechaFiltro);
+        }
+    };
+
+    const limpiarFiltro = async () => {
+        setFechaFiltro(null);
+        if (entrenadorSeleccionado) {
+            await cargarHorarios(entrenadorSeleccionado.id_usuario);
+        }
+    };
+
+    const { fechaMinima, fechaMaxima } = obtenerFechasLimite();
 
     if (cargando) {
         return (
@@ -212,65 +283,85 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
 
     return (
         <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
-            <ScrollView style={styles.container}>
+            <ScrollView 
+                style={styles.container}
+                refreshControl={
+                    <RefreshControl refreshing={refrescando} onRefresh={onRefresh} colors={['#e60000']} />
+                }
+            >
                 <HeaderColor />
 
                 <View style={styles.content}>
                     <TituloPrincipal titulo="Gestionar Horarios" />
-                    <TituloSecundario titulo="Asigna horarios de trabajo a los entrenadores por fecha." />
+                    <TituloSecundario titulo="Asigna y consulta los horarios de trabajo de los entrenadores." />
 
                     {/* Lista de entrenadores */}
                     <Text style={styles.sectionTitle}>Entrenadores</Text>
-                    {entrenadores.map((ent) => (
-                        <TouchableOpacity
-                            key={ent.id_usuario}
-                            style={[styles.cardEntrenador, entrenadorSeleccionado?.id_usuario === ent.id_usuario && styles.cardEntrenadorActivo]}
-                            onPress={() => seleccionarEntrenador(ent)}
-                        >
-                            <View style={styles.avatarEntrenador}>
-                                <Text style={styles.avatarTexto}>{ent.nombre.charAt(0)}</Text>
-                            </View>
-                            <View style={styles.infoEntrenador}>
-                                <Text style={styles.nombreEntrenador}>{ent.nombre}</Text>
-                            </View>
-                            {entrenadorSeleccionado?.id_usuario === ent.id_usuario && (
-                                <MaterialIcons name="check-circle" size={24} color="#34C759" />
-                            )}
-                        </TouchableOpacity>
-                    ))}
+                    {entrenadores.length === 0 ? (
+                        <Text style={styles.textoVacio}>No hay entrenadores registrados</Text>
+                    ) : (
+                        entrenadores.map((ent) => (
+                            <TouchableOpacity
+                                key={ent.id_usuario}
+                                style={[styles.cardEntrenador, entrenadorSeleccionado?.id_usuario === ent.id_usuario && styles.cardEntrenadorActivo]}
+                                onPress={() => seleccionarEntrenador(ent)}
+                            >
+                                <View style={styles.avatarEntrenador}>
+                                    <Text style={styles.avatarTexto}>{ent.nombre.charAt(0)}</Text>
+                                </View>
+                                <View style={styles.infoEntrenador}>
+                                    <Text style={styles.nombreEntrenador}>{ent.nombre}</Text>
+                                </View>
+                                {entrenadorSeleccionado?.id_usuario === ent.id_usuario && (
+                                    <MaterialIcons name="check-circle" size={24} color="#34C759" />
+                                )}
+                            </TouchableOpacity>
+                        ))
+                    )}
 
                     {/* Horarios del entrenador seleccionado */}
                     {entrenadorSeleccionado && (
                         <View style={styles.horariosContainer}>
                             <View style={styles.horariosHeader}>
-                            
-                                <TouchableOpacity style={styles.botonAgregar} onPress={abrirModalAsignar}>
-                                    <MaterialIcons name="add" size={24} color="#fff" />
-                                    <Text style={styles.botonAgregarText}>Agregar</Text>
-                                </TouchableOpacity>
+                                <BotonRojo 
+                                    titulo="Agregar Horario"
+                                    onPress={abrirModalAsignar}
+                                    style={styles.botonAgregar}
+                                />
                             </View>
 
-                            {/* Selector de fecha para filtrar */}
-                            <View style={styles.filtroFecha}>
-                                <Text style={styles.filtroLabel}>Filtrar por fecha:</Text>
+                            {/* Filtro por fecha */}
+                            <View style={styles.filtroContainer}>
                                 <TouchableOpacity 
-                                    style={styles.botonFecha}
-                                    onPress={() => setShowDatePicker(true)}
+                                    style={styles.botonFiltro}
+                                    onPress={() => setShowFiltroDatePicker(true)}
                                 >
-                                    <MaterialIcons name="date-range" size={20} color="#666" />
-                                    <Text style={styles.textoFecha}>
-                                        {formatFecha(fechaSeleccionada)}
+                                    <MaterialIcons name="filter-alt" size={20} color="#666" />
+                                    <Text style={styles.filtroTexto}>
+                                        {fechaFiltro ? formatFecha(fechaFiltro) : 'Filtrar por fecha'}
                                     </Text>
                                 </TouchableOpacity>
-                                {showDatePicker && (
-                                    <DateTimePicker
-                                        value={fechaSeleccionada}
-                                        mode="date"
-                                        display="default"
-                                        onChange={handleDateChange}
-                                    />
+                                {fechaFiltro && (
+                                    <TouchableOpacity style={styles.botonLimpiarFiltro} onPress={limpiarFiltro}>
+                                        <MaterialIcons name="close" size={18} color="#e60000" />
+                                        <Text style={styles.limpiarTexto}>Limpiar</Text>
+                                    </TouchableOpacity>
                                 )}
+                                <BotonGris 
+                                    titulo="Buscar"
+                                    onPress={aplicarFiltroFecha}
+                                    style={styles.botonAplicar}
+                                />
                             </View>
+
+                            {showFiltroDatePicker && (
+                                <DateTimePicker
+                                    value={fechaFiltro || new Date()}
+                                    mode="date"
+                                    display="default"
+                                    onChange={handleFiltroDateChange}
+                                />
+                            )}
 
                             {cargandoHorarios ? (
                                 <ActivityIndicator color="#e60000" style={styles.loader} />
@@ -278,17 +369,23 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
                                 <View style={styles.sinHorarios}>
                                     <MaterialIcons name="schedule" size={48} color="#ccc" />
                                     <Text style={styles.sinHorariosText}>
-                                        No hay horarios asignados para esta fecha
+                                        No hay horarios asignados{fechaFiltro ? ' para esta fecha' : ''}
                                     </Text>
                                 </View>
                             ) : (
                                 horarios.map((horario) => (
                                     <View key={horario.id_horario} style={styles.horarioCard}>
                                         <View style={styles.horarioInfo}>
+                                            <View style={styles.horarioFecha}>
+                                                <MaterialIcons name="date-range" size={18} color="#e60000" />
+                                                <Text style={styles.horarioFechaText}>
+                                                    {formatFecha(new Date(horario.fecha))}
+                                                </Text>
+                                            </View>
                                             <View style={styles.horarioHora}>
-                                                <MaterialIcons name="access-time" size={20} color="#e60000" />
+                                                <MaterialIcons name="access-time" size={18} color="#e60000" />
                                                 <Text style={styles.horarioHoraText}>
-                                                    {horario.hora_inicio} - {horario.hora_fin}
+                                                    {formatHoraAMPM(horario.hora_inicio)} - {formatHoraAMPM(horario.hora_fin)}
                                                 </Text>
                                             </View>
                                         </View>
@@ -331,6 +428,16 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
                                 {formatFecha(fechaSeleccionada)}
                             </Text>
                         </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={fechaSeleccionada}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
+                                minimumDate={fechaMinima}
+                                maximumDate={fechaMaxima}
+                            />
+                        )}
 
                         {/* Horarios disponibles */}
                         <Text style={styles.modalLabel}>Selecciona los horarios</Text>
@@ -348,10 +455,9 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
                                     onPress={() => toggleHora(hora.value)}
                                 >
                                     <View style={styles.checkbox}>
-                                        {horasSeleccionadas.includes(hora.value) && (
+                                        {horasSeleccionadas.includes(hora.value) ? (
                                             <MaterialIcons name="check-box" size={22} color="#e60000" />
-                                        )}
-                                        {!horasSeleccionadas.includes(hora.value) && (
+                                        ) : (
                                             <MaterialIcons name="check-box-outline-blank" size={22} color="#999" />
                                         )}
                                     </View>
@@ -370,10 +476,9 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
                                     onPress={() => toggleHora(hora.value)}
                                 >
                                     <View style={styles.checkbox}>
-                                        {horasSeleccionadas.includes(hora.value) && (
+                                        {horasSeleccionadas.includes(hora.value) ? (
                                             <MaterialIcons name="check-box" size={22} color="#e60000" />
-                                        )}
-                                        {!horasSeleccionadas.includes(hora.value) && (
+                                        ) : (
                                             <MaterialIcons name="check-box-outline-blank" size={22} color="#999" />
                                         )}
                                     </View>
@@ -392,12 +497,17 @@ const GestionarHorariosEntrenador = ({ navigation }) => {
                         )}
 
                         <View style={styles.modalBotones}>
-                            <TouchableOpacity style={styles.modalCancelar} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.modalCancelarText}>Cancelar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalGuardar} onPress={asignarHorarios}>
-                                <Text style={styles.modalGuardarText}>Asignar</Text>
-                            </TouchableOpacity>
+                            <BotonGris 
+                                titulo="Cancelar"
+                                onPress={() => setModalVisible(false)}
+                                style={styles.modalBoton}
+                            />
+                            <BotonRojo 
+                                titulo="Asignar"
+                                onPress={asignarHorarios}
+                                loading={asignando}
+                                style={styles.modalBoton}
+                            />
                         </View>
                     </View>
                 </View>
@@ -431,6 +541,11 @@ const styles = StyleSheet.create({
         color: '#333',
         marginTop: 20,
         marginBottom: 12,
+    },
+    textoVacio: {
+        textAlign: 'center',
+        color: '#999',
+        marginTop: 20,
     },
     cardEntrenador: {
         flexDirection: 'row',
@@ -479,6 +594,7 @@ const styles = StyleSheet.create({
     },
     horariosContainer: {
         marginTop: 24,
+        marginBottom: 40,
     },
     horariosHeader: {
         flexDirection: 'row',
@@ -487,46 +603,50 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     botonAgregar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#e60000',
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 8,
-        gap: 4,
     },
-    botonAgregarText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    filtroFecha: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#fff',
-        padding: 12,
-        borderRadius: 10,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-    },
-    filtroLabel: {
-        fontSize: 14,
-        color: '#666',
-    },
-    botonFecha: {
+    filtroContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#f5f5f5',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
+        marginBottom: 16,
     },
-    textoFecha: {
+    botonFiltro: {
+        flex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        gap: 8,
+    },
+    filtroTexto: {
         fontSize: 14,
-        color: '#333',
+        color: '#666',
+    },
+    botonLimpiarFiltro: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF0F0',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 4,
+    },
+    limpiarTexto: {
+        fontSize: 12,
+        color: '#e60000',
+    },
+    botonAplicar: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    loader: {
+        marginTop: 20,
     },
     sinHorarios: {
         alignItems: 'center',
@@ -540,8 +660,8 @@ const styles = StyleSheet.create({
     },
     horarioCard: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: '#fff',
         borderRadius: 10,
         padding: 12,
@@ -551,22 +671,28 @@ const styles = StyleSheet.create({
     },
     horarioInfo: {
         flex: 1,
+        gap: 6,
+    },
+    horarioFecha: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    horarioFechaText: {
+        fontSize: 14,
+        color: '#333',
     },
     horarioHora: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        gap: 8,
     },
     horarioHoraText: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#333',
+        fontSize: 14,
+        color: '#666',
     },
     botonEliminar: {
         padding: 8,
-    },
-    loader: {
-        marginTop: 20,
     },
     modalOverlay: {
         flex: 1,
@@ -592,7 +718,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
+    },
+    infoBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF3CD',
+        borderWidth: 1,
+        borderColor: '#FFEeba',
+        borderRadius: 8,
+        padding: 8,
+        marginBottom: 16,
+        gap: 6,
+    },
+    infoBannerText: {
+        flex: 1,
+        fontSize: 11,
+        color: '#856404',
     },
     modalLabel: {
         fontSize: 15,
@@ -669,29 +811,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 12,
     },
-    modalCancelar: {
+    modalBoton: {
         flex: 1,
-        paddingVertical: 12,
-        borderRadius: 10,
-        backgroundColor: '#e0e0e0',
-        alignItems: 'center',
-    },
-    modalCancelarText: {
-        color: '#666',
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    modalGuardar: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 10,
-        backgroundColor: '#e60000',
-        alignItems: 'center',
-    },
-    modalGuardarText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
 });
 

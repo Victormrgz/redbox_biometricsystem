@@ -236,13 +236,13 @@ const MisResultados = () => {
                         <View style={styles.grid_item}>
                             <TituloTerciario titulo="Movimiento:" />
                             <TouchableOpacity 
-                                style={styles.dropdownBusca} 
+                                style={styles.dropdownBuscar} 
                                 onPress={() => setModalVisible(true)}
                             >
                                 <Text style={formData.nombre_movimiento ? styles.textValue : styles.textPlaceholder}>
                                     {formData.nombre_movimiento || 'Seleccionar movimiento'}
                                 </Text>
-                                <MaterialIcons name="keyboard-arrow-down" size={24} color="gray" />
+                                <MaterialIcons name="keyboard-arrow-down" size={24} color="gray" style={styles.flecha} />
                             </TouchableOpacity>
                         </View>
 
@@ -305,7 +305,7 @@ const MisResultados = () => {
                         <View style={styles.grid_item}>
                             <TituloTerciario titulo="Unidad:" />
                             <TouchableOpacity 
-                                style={styles.dropdownBusca} 
+                                style={styles.dropdownBuscar} 
                                 onPress={() => setUnidadModalVisible(true)}
                             >
                                 <Text style={styles.textValue}>{formData.unidad}</Text>
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
         width: '48%',
         padding: 10,    
     },
-    dropdownBusca: {
+    dropdownBuscar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -438,6 +438,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         height: 45,
         backgroundColor: '#fff',
+    },
+    flecha: {
+        marginLeft: -10,
     },
     input: {
         height: 45,
