@@ -217,7 +217,6 @@ function Inicio() {
                                 </View>
                                 <BotonBlanco titulo="Mis Horarios" onPress={() => navigation.navigate('VerHorarioEntrenador')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Resultados Alumnos" onPress={() => navigation.navigate('ResultadosAlumnos')} style={styles.botonFull} />
-                                <BotonBlanco titulo="Suscripciones Alumnos" onPress={() => navigation.navigate('SuscripcionesAlumnos')} style={styles.botonFull} />
                             </>
                         )}
 
