@@ -24,6 +24,7 @@ import GestionarClases from "../entrenador/GestionarClases";
 import ResultadosAlumnos from "../entrenador/ResultadosAlumnos";
 import GestionarHorarioEntrenador from '../admin/GestionarHorarioEntrenador';
 import VerHorarioEntrenador from '../entrenador/VerHorarioEntrenador';
+import RecuperarContrasena from "../login/RecuperarContrasena";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -96,9 +97,15 @@ export default function AppNavegar() {
                             component={IniciarSesion} 
                             initialParams={{ setIsAuthenticated }} 
                         />
-                        <Stack.Screen name="CrearCuenta" 
+                        <Stack.Screen 
+                            name="CrearCuenta" 
                             component={CrearCuenta}
-                            initialParams={{ setIsAuthenticated }} />
+                            initialParams={{ setIsAuthenticated }} 
+                        />
+                        <Stack.Screen 
+                            name="RecuperarContrasena" 
+                            component={RecuperarContrasena} 
+                        />
                     </>
                 ) : (
                     <>
@@ -115,7 +122,6 @@ export default function AppNavegar() {
                         <Stack.Screen name="ResultadosAlumnos" component={ResultadosAlumnos} />
                         <Stack.Screen name="GestionarHorarioEntrenador" component={GestionarHorarioEntrenador} />
                         <Stack.Screen name="VerHorarioEntrenador" component={VerHorarioEntrenador} />
-                        
                     </>
                 )}
             </Stack.Navigator>

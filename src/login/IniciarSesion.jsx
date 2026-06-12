@@ -37,14 +37,13 @@ const IniciarSesion = ({route}) => {
         
         const credenciales = {
             email_usuario: emailLimpio,
-            contrasena_usuario: contrasena // No le hagas trim a la contraseña, podría tener espacios válidos
+            contrasena_usuario: contrasena 
         };
 
         console.log("Enviando a Django:", credenciales);
 
         const respuesta = await loginUsuario(credenciales);
         
-        // ... resto de tu lógica de guardado ...
         if (respuesta.token) {
             await AsyncStorage.setItem('userToken', respuesta.token);
             await AsyncStorage.setItem('userId', JSON.stringify(respuesta.user.id_usuario));
@@ -53,10 +52,9 @@ const IniciarSesion = ({route}) => {
         }
 
     } catch (error) {
-        // LOG CLAVE: Aquí veremos qué dice exactamente Django del error 400
         if (error.response) {
             console.log("Respuesta de error de Django:", error.response.data);
-            // Esto te dirá si el error es "Email no encontrado" o "Password incorrecto"
+            // Esto dice si el error es "Email no encontrado" o "Password incorrecto"
         }
         Alert.alert('Error', 'Credenciales incorrectas.');
     } finally {
@@ -78,7 +76,7 @@ const IniciarSesion = ({route}) => {
     };
 
     const handleOlvide = () => {
-        // Aquí va la lógica para recuperar contraseña
+        navigation.navigate('RecuperarContrasena');
     };
 
     return (
