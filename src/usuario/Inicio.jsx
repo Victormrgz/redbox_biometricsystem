@@ -128,7 +128,7 @@ function Inicio() {
         day: '2-digit', month: '2-digit', year: 'numeric'
     });
 
-    // Mostrar rol del usuario para debug
+    // Mostrar rol del usuario 
     console.log('Rol del usuario:', rol);
 
     return (
@@ -200,7 +200,8 @@ function Inicio() {
                                 <BotonBlanco titulo="Registrar Pago" onPress={() => navigation.navigate('RegistrarPago')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Historial de pagos" onPress={() => navigation.navigate('HistoricoPagos')} style={styles.botonFull} />
                                 <BotonBlanco titulo="Suscripciones" onPress={() => navigation.navigate('Suscripciones')} style={styles.botonFull} />
-                                <BotonBlanco titulo="Horarios Entrenadores" onPress={() => navigation.navigate('GestionarHorarioEntrenador')} style={styles.botonFull} />    
+                                <BotonBlanco titulo="Horarios Entrenadores" onPress={() => navigation.navigate('GestionarHorarioEntrenador')} style={styles.botonFull} />
+                                <BotonBlanco titulo="Invitaciones" onPress={() => navigation.navigate('Invitaciones')} style={styles.botonFull} />    
                             </>
                         )}
 

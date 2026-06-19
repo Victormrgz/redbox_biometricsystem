@@ -138,6 +138,12 @@ const CrearCuenta = ({ route }) => {
         const { newErrors, isValid } = validateForm();
         setErrors(newErrors);
 
+        // ✅ Validar que se haya ingresado un código de invitación
+        if (!form.invitacion.trim()) {
+            Alert.alert('Error', 'El código de invitación es obligatorio.');
+            return;
+        }
+
         if (!isValid) {
             Alert.alert('Error de validación', 'Por favor completa todos los campos correctamente.');
             return;
@@ -158,6 +164,7 @@ const CrearCuenta = ({ route }) => {
                 genero_usuario: form.genero,
                 email_usuario: form.correo.trim().toLowerCase(),
                 contrasena_usuario: form.contrasena,
+                codigo_invitacion: form.invitacion.trim().toUpperCase(), // ✅ Agregar código
             };
             
             const response = await registrarUsuario(datosParaEnviar);
@@ -170,7 +177,7 @@ const CrearCuenta = ({ route }) => {
                 { text: 'OK', onPress: () => setIsAuthenticated(true) } 
             ]);
         } catch (error) {
-            const errorMsg = error.response?.data?.message || 'Error al conectar con el servidor';
+            const errorMsg = error.response?.data?.error || 'Error al conectar con el servidor';
             Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Datos inválidos');
         } finally {
             setCargando(false);

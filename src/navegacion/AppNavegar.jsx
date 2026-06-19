@@ -17,6 +17,7 @@ import GestionarRoles from "../admin/GestionarRoles";
 import RegistrarPago from "../admin/RegistrarPago";
 import HistoricoPagos from "../admin/HistoricoPagos";
 import Suscripciones from "../admin/Suscripciones";
+import Invitaciones from "../admin/Invitaciones";
 import CrearCuenta from "../login/CrearCuenta";
 import IniciarSesion from "../login/IniciarSesion";
 import MisAlumnos from "../entrenador/MisAlumnos";
@@ -25,6 +26,7 @@ import ResultadosAlumnos from "../entrenador/ResultadosAlumnos";
 import GestionarHorarioEntrenador from '../admin/GestionarHorarioEntrenador';
 import VerHorarioEntrenador from '../entrenador/VerHorarioEntrenador';
 import RecuperarContrasena from "../login/RecuperarContrasena";
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -122,6 +124,7 @@ export default function AppNavegar() {
                         <Stack.Screen name="ResultadosAlumnos" component={ResultadosAlumnos} />
                         <Stack.Screen name="GestionarHorarioEntrenador" component={GestionarHorarioEntrenador} />
                         <Stack.Screen name="VerHorarioEntrenador" component={VerHorarioEntrenador} />
+                        <Stack.Screen name="Invitaciones" component={Invitaciones} />
                     </>
                 )}
             </Stack.Navigator>
