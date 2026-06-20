@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const redBoxApi = axios.create({
-    baseURL: "http://192.168.1.109:8000/api",
+    baseURL: "http://192.168.1.100:8000/api",
 });
 
 // Usuarios
