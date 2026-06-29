@@ -86,6 +86,18 @@ const CrearCuenta = ({ route }) => {
         let newErrors = {};
         let isValid = true;
 
+        //Validar que al menos tenga primer nombre o segundo nombre
+        if (!form.primerNombre.trim() && !form.segundoNombre.trim()) {
+            newErrors.primerNombre = 'Debes ingresar al menos un nombre.';
+            isValid = false;
+        }
+        
+        //Validar que al menos tenga primer apellido o segundo apellido
+        if (!form.primerApellido.trim() && !form.segundoApellido.trim()) {
+            newErrors.primerApellido = 'Debes ingresar al menos un apellido.';
+            isValid = false;
+        }
+
         // Validaciones de texto (Nombres, Apellidos, Cédula, Correo, Password 
         if (!form.primerNombre.trim()) { newErrors.primerNombre = 'El primer nombre es obligatorio.'; isValid = false; }
         if (!form.primerApellido.trim()) { newErrors.primerApellido = 'El primer apellido es obligatorio.'; isValid = false; }
