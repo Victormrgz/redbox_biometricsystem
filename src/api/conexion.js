@@ -1,9 +1,45 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const IP_LOCAL = "192.168.1.110";  // ← Pon tu IP de ipconfig
+
 export const redBoxApi = axios.create({
-    baseURL: "http://192.168.1.100:8000/api",
+  baseURL: `http://${IP_LOCAL}:8000/api`,
+  timeout: 30000,
 });
+
+// Interceptor para logs
+redBoxApi.interceptors.request.use(
+  async (config) => {
+    console.log(`📤 ${config.method.toUpperCase()} a:`, config.url);
+    const token = await AsyncStorage.getItem('userToken');
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    console.log('❌ Error en petición:', error);
+    return Promise.reject(error);
+  }
+);
+
+redBoxApi.interceptors.response.use(
+  (response) => {
+    console.log(`📥 Respuesta de ${response.config.url}:`, response.status);
+    return response;
+  },
+  (error) => {
+    console.log('❌ Error en respuesta:', error);
+    if (error.response) {
+      console.log('📥 Status:', error.response.status);
+      console.log('📥 Data:', error.response.data);
+    } else if (error.request) {
+      console.log('📥 No se recibió respuesta del servidor');
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Usuarios
 export const getUsuarios = () => redBoxApi.get('/usuarios');
@@ -117,4 +153,16 @@ export const asignarRol = async (idUsuario, rol, token) => {
         { headers: { Authorization: `Token ${token}` } }
     );
     return respuesta.data;
+};
+
+//Cache simple para movimientos
+let movimientosCache = null;
+export const getMovimientos = async () => {
+    if (movimientosCache) return movimientosCache;
+    const token = await AsyncStorage.getItem('userToken');
+    const respuesta = await redBoxApi.get('/movimientos/', {
+        headers: { Authorization: `Token ${token}` }
+    });
+    movimientosCache = respuesta.data;
+    return movimientosCache;
 };

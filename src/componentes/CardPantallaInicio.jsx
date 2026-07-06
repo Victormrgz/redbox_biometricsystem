@@ -1,4 +1,5 @@
 import React from 'react';
+import { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 /**
@@ -56,4 +57,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default CardPantallaInicio;
+export default React.memo(CardPantallaInicio);
