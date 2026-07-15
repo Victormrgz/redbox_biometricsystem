@@ -343,8 +343,7 @@ const styles = StyleSheet.create({
     codigoGrande: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#FF3B30',
-        
+        color: '#e60000',
         letterSpacing: 4,
     },
     modalExpiracion: {

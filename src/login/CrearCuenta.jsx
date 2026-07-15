@@ -1,16 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import HeaderColor from '../componentes/HeaderColor';
 import BotonRojo from '../componentes/BotonRojo';
 import TituloPrincipal from '../componentes/TituloPrincipal';
-import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { registrarUsuario } from '../api/conexion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuthContext } from '../auth/AuthContext';
 
 const opcionesGenero = [
     { value: '', label: 'Selecciona género' },
@@ -22,6 +22,8 @@ const opcionesGenero = [
 const CrearCuenta = ({ route }) => {
     const insets = useSafeAreaInsets();
     const { setIsAuthenticated } = route.params;
+    const { actualizarUsuario } = useContext(AuthContext);
+    const navigation = useNavigation();
 
     const phoneInputRef = useRef(null);
 
@@ -35,7 +37,7 @@ const CrearCuenta = ({ route }) => {
         contrasena: '',
         contrasena2: '',
         telefono: '',
-        codigoTelefono: '↓', 
+        codigoTelefono: '↓',
         nacimiento: '',
         genero: '',
         invitacion: '',
@@ -48,7 +50,6 @@ const CrearCuenta = ({ route }) => {
         if (errors[name]) setErrors({ ...errors, [name]: null });
     };
 
-    // validar la fecha de nacimiento
     const validateNacimiento = (date) => {
         if (!date) {
             return 'La fecha es obligatoria.';
@@ -58,7 +59,7 @@ const CrearCuenta = ({ route }) => {
         if (date > fechaMinima) {
             return 'Debes tener al menos 15 años.';
         }
-        return null; // No hay error
+        return null;
     };
 
     const handleDateChange = (event, selectedDate) => {
@@ -68,10 +69,8 @@ const CrearCuenta = ({ route }) => {
             setErrors(prevErrors => ({ ...prevErrors, nacimiento: error }));
             setForm(prevForm => ({ ...prevForm, nacimiento: selectedDate }));
         }
-        // Si el usuario cancela el DatePicker (selectedDate es undefined), el error se mantiene o se limpia si ya no aplica.
     };
 
-    const navigation = useNavigation();
     const [cargando, setCargando] = useState(false);
 
     const formatFecha = (date) => {
@@ -86,35 +85,32 @@ const CrearCuenta = ({ route }) => {
         let newErrors = {};
         let isValid = true;
 
-        //Validar que al menos tenga primer nombre o segundo nombre
         if (!form.primerNombre.trim() && !form.segundoNombre.trim()) {
             newErrors.primerNombre = 'Debes ingresar al menos un nombre.';
             isValid = false;
         }
-        
-        //Validar que al menos tenga primer apellido o segundo apellido
+
         if (!form.primerApellido.trim() && !form.segundoApellido.trim()) {
             newErrors.primerApellido = 'Debes ingresar al menos un apellido.';
             isValid = false;
         }
 
-        // Validaciones de texto (Nombres, Apellidos, Cédula, Correo, Password 
         if (!form.primerNombre.trim()) { newErrors.primerNombre = 'El primer nombre es obligatorio.'; isValid = false; }
         if (!form.primerApellido.trim()) { newErrors.primerApellido = 'El primer apellido es obligatorio.'; isValid = false; }
-        
+
         if (!form.cedula.trim()) {
             newErrors.cedula = 'La cédula es obligatoria.';
             isValid = false;
-        } else if (!/^\d{1,8}$/.test(form.cedula.trim())) { 
+        } else if (!/^\d{1,8}$/.test(form.cedula.trim())) {
             newErrors.cedula = 'La cédula debe tener máximo 8 dígitos.';
             isValid = false;
         }
 
         if (!form.correo.trim()) { newErrors.correo = 'El correo es obligatorio.'; isValid = false; }
-        
-        if (!form.contrasena) { 
-            newErrors.contrasena = 'La contraseña es obligatoria.'; 
-            isValid = false; 
+
+        if (!form.contrasena) {
+            newErrors.contrasena = 'La contraseña es obligatoria.';
+            isValid = false;
         }
 
         if (form.contrasena !== form.contrasena2) {
@@ -122,7 +118,6 @@ const CrearCuenta = ({ route }) => {
             isValid = false;
         }
 
-        // Ejecutar validación de teléfono
         const numeroLimpio = form.telefono.trim();
         if (!numeroLimpio) {
             newErrors.telefono = 'El número es obligatorio.';
@@ -150,7 +145,6 @@ const CrearCuenta = ({ route }) => {
         const { newErrors, isValid } = validateForm();
         setErrors(newErrors);
 
-        // ✅ Validar que se haya ingresado un código de invitación
         if (!form.invitacion.trim()) {
             Alert.alert('Error', 'El código de invitación es obligatorio.');
             return;
@@ -176,19 +170,50 @@ const CrearCuenta = ({ route }) => {
                 genero_usuario: form.genero,
                 email_usuario: form.correo.trim().toLowerCase(),
                 contrasena_usuario: form.contrasena,
-                codigo_invitacion: form.invitacion.trim().toUpperCase(), // ✅ Agregar código
+                codigo_invitacion: form.invitacion.trim().toUpperCase(),
             };
-            
+
             const response = await registrarUsuario(datosParaEnviar);
             const { token, user_id } = response;
 
+            // ✅ Guardar en AsyncStorage
             await AsyncStorage.setItem('userToken', token);
             await AsyncStorage.setItem('userId', JSON.stringify(user_id));
 
+            // ✅ Crear objeto usuario con los datos del registro
+            const usuarioData = {
+                id_usuario: user_id,
+                pnombre_usuario: form.primerNombre.trim(),
+                snombre_usuario: form.segundoNombre?.trim() || '',
+                papellido_usuario: form.primerApellido.trim(),
+                sapellido_usuario: form.segundoApellido?.trim() || '',
+                email_usuario: form.correo.trim().toLowerCase(),
+                cedula_usuario: form.cedula.trim(),
+                telefono_usuario: `${form.codigoTelefono}${form.telefono.trim()}`,
+                fecha_nacimiento_usuario: fechaFormateada,
+                genero_usuario: form.genero,
+                creditos_usuario: 0,
+                peso: null,
+                altura: null,
+                rol: 'Usuario'
+            };
+
+            // ✅ Actualizar el contexto inmediatamente
+            if (actualizarUsuario) {
+                await actualizarUsuario(usuarioData);
+            }
+
             Alert.alert('Éxito', 'Cuenta creada correctamente', [
-                { text: 'OK', onPress: () => setIsAuthenticated(true) } 
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        setIsAuthenticated(true);
+                    }
+                }
             ]);
+
         } catch (error) {
+            console.error('Error en registro:', error);
             const errorMsg = error.response?.data?.error || 'Error al conectar con el servidor';
             Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Datos inválidos');
         } finally {
@@ -207,6 +232,8 @@ const CrearCuenta = ({ route }) => {
                 <View style={styles.container}>
                     <TituloPrincipal titulo="¡ÚNETE A REDBOX!" />
                     <Text style={styles.subtitulo}>Por favor, completa tus datos para registrarte.</Text>
+
+                    {/* Primer Nombre y Segundo Nombre */}
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Primer Nombre</Text>
@@ -228,6 +255,8 @@ const CrearCuenta = ({ route }) => {
                             />
                         </View>
                     </View>
+
+                    {/* Primer Apellido y Segundo Apellido */}
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Primer Apellido</Text>
@@ -250,6 +279,7 @@ const CrearCuenta = ({ route }) => {
                         </View>
                     </View>
 
+                    {/* Cédula */}
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Cédula</Text>
@@ -265,6 +295,7 @@ const CrearCuenta = ({ route }) => {
                         </View>
                     </View>
 
+                    {/* Correo electrónico */}
                     <Text style={styles.label}>Correo electrónico</Text>
                     <TextInput
                         style={[styles.input, errors.correo && styles.inputError]}
@@ -276,10 +307,11 @@ const CrearCuenta = ({ route }) => {
                     />
                     {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
 
+                    {/* Contraseña y Confirmar contraseña */}
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Contraseña</Text>
-                            <View style = {styles.contenedorInput}>
+                            <View style={styles.contenedorInput}>
                                 <TextInput
                                     style={[styles.input, errors.contrasena && styles.inputError]}
                                     placeholder="Contraseña"
@@ -287,90 +319,80 @@ const CrearCuenta = ({ route }) => {
                                     onChangeText={text => handleChange('contrasena', text)}
                                     secureTextEntry={!ojoAbierto}
                                 />
-                                
                                 <TouchableOpacity onPress={presionarOjo}>
-                                    <AntDesign 
-                                        // El icono cambia según el estado
-                                        name= "eye-invisible"
-                                        size={24} 
-                                        color={errors.contrasena ? "red" : "black"} 
-                                        style={styles.icono} 
+                                    <AntDesign
+                                        name="eye-invisible"
+                                        size={24}
+                                        color={errors.contrasena ? "red" : "black"}
+                                        style={styles.icono}
                                     />
                                 </TouchableOpacity>
                             </View>
                             {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
                         </View>
                         <View style={styles.contenedorCard}>
-                        <Text style={styles.label}>Confirmar contraseña</Text>
-                        
-                        <View style={styles.contenedorInput}>
-                            <TextInput
-                                style={[styles.input, errors.contrasena2 && styles.inputError]}
-                                placeholder="Contraseña"
-                                value={form.contrasena2}
-                                onChangeText={text => handleChange('contrasena2', text)}
-                                secureTextEntry={!verConfirmar} 
-                            />
-                            
-                            <TouchableOpacity onPress={() => setVerConfirmar(!verConfirmar)}>
-                                <AntDesign 
-                                    name= "eye-invisible"
-                                    size={24} 
-                                    color={errors.contrasena2 ? "red" : "black"} 
-                                    style={styles.icono} 
+                            <Text style={styles.label}>Confirmar contraseña</Text>
+                            <View style={styles.contenedorInput}>
+                                <TextInput
+                                    style={[styles.input, errors.contrasena2 && styles.inputError]}
+                                    placeholder="Contraseña"
+                                    value={form.contrasena2}
+                                    onChangeText={text => handleChange('contrasena2', text)}
+                                    secureTextEntry={!verConfirmar}
                                 />
-                            </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setVerConfirmar(!verConfirmar)}>
+                                    <AntDesign
+                                        name="eye-invisible"
+                                        size={24}
+                                        color={errors.contrasena2 ? "red" : "black"}
+                                        style={styles.icono}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                            {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
                         </View>
-
-                    {errors.contrasena2 && <Text style={styles.errorText}>{errors.contrasena2}</Text>}
-                    </View>
                     </View>
 
+                    {/* Teléfono y Fecha de Nacimiento */}
                     <View style={styles.row}>
                         <View style={styles.contenedorCard}>
-                        <Text style={styles.label}>Teléfono</Text>
-                        
-                        <View style={styles.filaTelefono}>
-                            
-                            <View style={[styles.contenedorPicker, errors.telefono && styles.inputErrorBorder]}>
-                                <Text style={styles.textoCodigo}>{form.codigoTelefono}</Text>
-                                <Picker
-                                    mode="dropdown"
-                                    selectedValue={form.codigoTelefono}
-                                    onValueChange={(itemValue) => {
-                                        handleChange('codigoTelefono', itemValue);
-                                        phoneInputRef.current?.focus();
+                            <Text style={styles.label}>Teléfono</Text>
+                            <View style={styles.filaTelefono}>
+                                <View style={[styles.contenedorPicker, errors.telefono && styles.inputErrorBorder]}>
+                                    <Text style={styles.textoCodigo}>{form.codigoTelefono}</Text>
+                                    <Picker
+                                        mode="dropdown"
+                                        selectedValue={form.codigoTelefono}
+                                        onValueChange={(itemValue) => {
+                                            handleChange('codigoTelefono', itemValue);
+                                            phoneInputRef.current?.focus();
+                                        }}
+                                        style={styles.picker}
+                                    >
+                                        <Picker.Item label="0414" value="0414" />
+                                        <Picker.Item label="0424" value="0424" />
+                                        <Picker.Item label="0412" value="0412" />
+                                        <Picker.Item label="0422" value="0422" />
+                                        <Picker.Item label="0416" value="0416" />
+                                        <Picker.Item label="0426" value="0426" />
+                                    </Picker>
+                                </View>
+                                <TextInput
+                                    ref={phoneInputRef}
+                                    style={[styles.inputTelefono, errors.telefono && styles.inputErrorBorder]}
+                                    placeholder="1234567"
+                                    keyboardType="numeric"
+                                    maxLength={7}
+                                    value={form.telefono}
+                                    onChangeText={(text) => {
+                                        const cleaned = text.replace(/[^0-9]/g, '');
+                                        handleChange('telefono', cleaned);
                                     }}
-                                    style={styles.picker}
-                                >
-                                    <Picker.Item label="0414" value="0414" />
-                                    <Picker.Item label="0424" value="0424" />
-                                    <Picker.Item label="0412" value="0412" />
-                                    <Picker.Item label="0416" value="0416" />
-                                    <Picker.Item label="0426" value="0426" />
-                                </Picker>
+                                />
                             </View>
+                            {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
+                        </View>
 
-                            
-                            <TextInput
-                                ref={phoneInputRef}
-                                style={[styles.inputTelefono, errors.telefono && styles.inputErrorBorder]}
-                                placeholder="1234567"
-                                keyboardType="numeric"
-                                maxLength={7}
-                                value={form.telefono}
-                                onChangeText={(text) => {
-                                    // Solo permite números
-                                    const cleaned = text.replace(/[^0-9]/g, '');
-                                    handleChange('telefono', cleaned); // Usar handleChange para limpiar el error
-                                }}
-                            />
-                        </View>
-                        
-                        {/* Mensaje de error debajo de ambos */}
-                        {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
-                        </View>
-                    
                         <View style={styles.contenedorCard}>
                             <Text style={styles.label}>Fecha de Nacimiento</Text>
                             <TouchableOpacity
@@ -393,6 +415,7 @@ const CrearCuenta = ({ route }) => {
                         </View>
                     </View>
 
+                    {/* Género */}
                     <View style={styles.generoContainer}>
                         <Text style={styles.label}>Género</Text>
                         <View style={[
@@ -416,13 +439,18 @@ const CrearCuenta = ({ route }) => {
                         {errors.genero && <Text style={styles.errorText}>{errors.genero}</Text>}
                     </View>
 
+                    {/* Código de invitación */}
                     <TextInput
                         style={styles.input}
                         placeholder="Código de invitación"
                         value={form.invitacion}
                         onChangeText={text => handleChange('invitacion', text)}
                     />
+
+                    {/* Botón Crear Cuenta */}
                     <BotonRojo titulo="CREAR CUENTA" onPress={handleSubmit} loading={cargando} disabled={cargando} />
+
+                    {/* Enlace a Iniciar Sesión */}
                     <View style={{ alignItems: 'center', marginTop: 16 }}>
                         <Text>¿Ya tienes cuenta? <TouchableOpacity onPress={handleLogin}><Text style={styles.footerLink}>Iniciar Sesion</Text></TouchableOpacity></Text>
                     </View>
@@ -432,10 +460,7 @@ const CrearCuenta = ({ route }) => {
     );
 };
 
-export default CrearCuenta;
-
 const styles = StyleSheet.create({
-    
     safeArea: {
         flex: 1,
         backgroundColor: '#fff'
@@ -509,7 +534,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: '100%',
         height: '100%',
-        opacity: 0, // El picker es invisible pero funcional al tacto
+        opacity: 0,
         backgroundColor: 'transparent',
     },
     inputTelefono: {
@@ -567,13 +592,15 @@ const styles = StyleSheet.create({
         marginBottom: -3,
     },
     inputError: {
-        borderColor: '#e60000', // Rojo para el borde del input con error
+        borderColor: '#e60000',
         borderWidth: 1,
     },
     errorText: {
-        color: '#e60000', // Rojo para el texto del error
+        color: '#e60000',
         fontSize: 12,
         marginBottom: 4,
         fontWeight: 'bold',
     },
 });
+
+export default CrearCuenta;

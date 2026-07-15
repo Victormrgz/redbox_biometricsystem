@@ -331,9 +331,10 @@ const EditarPerfil = ({ navigation, route }) => {
                                     enabled={modoEdicion}
                                 >
                                     <Picker.Item label="0412" value="0412" />
+                                    <Picker.Item label="0422" value="0422" />
                                     <Picker.Item label="0414" value="0414" />
-                                    <Picker.Item label="0416" value="0416" />
                                     <Picker.Item label="0424" value="0424" />
+                                    <Picker.Item label="0416" value="0416" />
                                     <Picker.Item label="0426" value="0426" />
                                 </Picker>
                             </View>

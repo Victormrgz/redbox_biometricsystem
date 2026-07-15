@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../auth/AuthContext';
 
 const IniciarSesion = ({ route }) => {
+    const { emailPrellenado, mensaje } = route.params || {};
     const { setIsAuthenticated } = route.params;
     const { actualizarUsuario } = useContext(AuthContext);
     const insets = useSafeAreaInsets();
@@ -39,6 +40,15 @@ const IniciarSesion = ({ route }) => {
     // ✅ Refs para inputs
     const correoRef = useRef(null);
     const contrasenaRef = useRef(null);
+
+    useEffect(() => {
+        if (emailPrellenado) {
+            setCorreo(emailPrellenado);
+        }
+        if (mensaje) {
+            Alert.alert('Éxito', mensaje);
+        }
+    }, [emailPrellenado, mensaje]);
 
     // ✅ Validación en tiempo real (con useCallback)
     const validarCorreo = useCallback((text) => {
