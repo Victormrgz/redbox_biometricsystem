@@ -19,7 +19,7 @@ const RegistrarPago = () => {
 
     const [form, setForm] = useState({
         id_usuario: '',
-        nombre_plan: 'Basico',
+        nombre_plan: 'Básico',
         monto: '',
         moneda: 'Dolares',
         pin: '',
