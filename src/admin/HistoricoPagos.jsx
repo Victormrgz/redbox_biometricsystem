@@ -13,6 +13,10 @@ import { getHistorialPagos, getTodosLosUsuarios } from '../api/conexion';
 import { AuthContext } from '../auth/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BotonRojo from '../componentes/BotonRojo';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { redBoxApi } from '../api/conexion';
 
 const HistorialPagos = () => {
     const insets = useSafeAreaInsets();
@@ -22,10 +26,13 @@ const HistorialPagos = () => {
     const [pagos, setPagos] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
     const [usuarioFiltro, setUsuarioFiltro] = useState('');
-    const [fechaFiltro, setFechaFiltro] = useState(null);
+    const [fechaInicio, setFechaInicio] = useState(null);
+    const [fechaFin, setFechaFin] = useState(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [pickerMode, setPickerMode] = useState('inicio');
     const [cargando, setCargando] = useState(true);
     const [filtrando, setFiltrando] = useState(false);
+    const [descargandoPDF, setDescargandoPDF] = useState(false);
 
     useEffect(() => {
         cargarDatos();
@@ -51,13 +58,40 @@ const HistorialPagos = () => {
         try {
             setFiltrando(true);
             const token = await AsyncStorage.getItem('userToken');
-            const fechaStr = fechaFiltro ? fechaFiltro.toISOString().split('T')[0] : null;
-            const resultado = await getHistorialPagos(token, {
-                idUsuario: esAdmin ? (usuarioFiltro || null) : null,
-                fecha: fechaStr,
-            });
+            
+            const params = {};
+            
+            if (fechaInicio) {
+                params.fecha_inicio = fechaInicio.toISOString().split('T')[0];
+            }
+            if (fechaFin) {
+                params.fecha_fin = fechaFin.toISOString().split('T')[0];
+            }
+            
+            // ✅ Validar que la fecha fin no sea mayor al día actual
+            if (fechaFin) {
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const fechaFinComparar = new Date(fechaFin);
+                fechaFinComparar.setHours(0, 0, 0, 0);
+                
+                if (fechaFinComparar > hoy) {
+                    Alert.alert('Error', 'La fecha fin no puede ser mayor al día actual');
+                    setFiltrando(false);
+                    return;
+                }
+            }
+            
+            if (esAdmin && usuarioFiltro) {
+                params.id_usuario = usuarioFiltro;
+            }
+            
+            console.log('📤 Filtros:', params);
+            
+            const resultado = await getHistorialPagos(token, params);
             setPagos(resultado);
         } catch (error) {
+            console.error('Error filtrando:', error);
             Alert.alert('Error', 'No se pudo filtrar el historial.');
         } finally {
             setFiltrando(false);
@@ -66,13 +100,127 @@ const HistorialPagos = () => {
 
     const limpiarFiltros = async () => {
         setUsuarioFiltro('');
-        setFechaFiltro(null);
+        setFechaInicio(null);
+        setFechaFin(null);
         try {
             const token = await AsyncStorage.getItem('userToken');
             const resultado = await getHistorialPagos(token);
             setPagos(resultado);
         } catch (error) {
             Alert.alert('Error', 'No se pudo limpiar los filtros.');
+        }
+    };
+
+    const formatFecha = (date) => {
+        if (!date) return '';
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+
+    const descargarPDFHistorial = async () => {
+        console.log('🟢 Iniciando descarga de PDF...');
+        console.log('📊 Pagos disponibles:', pagos.length);
+        console.log('📅 Fecha Inicio:', fechaInicio);
+        console.log('📅 Fecha Fin:', fechaFin);
+
+        try {
+            // ✅ Validar que haya pagos
+            if (!pagos || pagos.length === 0) {
+                Alert.alert('Sin datos', 'No hay pagos para generar el PDF.');
+                console.log('❌ Sin pagos');
+                return;
+            }
+
+            // ✅ Validar que se haya seleccionado un rango de fechas
+            if (!fechaInicio || !fechaFin) {
+                Alert.alert('Error', 'Debes seleccionar un rango de fechas para descargar el PDF.');
+                console.log('❌ Fechas no seleccionadas');
+                return;
+            }
+
+            // ✅ Validar que la fecha fin no sea mayor al día actual
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const fechaFinComparar = new Date(fechaFin);
+            fechaFinComparar.setHours(0, 0, 0, 0);
+            
+            if (fechaFinComparar > hoy) {
+                Alert.alert('Error', 'La fecha fin no puede ser mayor al día actual');
+                console.log('❌ Fecha fin futura');
+                return;
+            }
+
+            setDescargandoPDF(true);
+            const token = await AsyncStorage.getItem('userToken');
+            console.log('✅ Token obtenido');
+
+            // ✅ Preparar parámetros
+            const params = {
+                fecha_inicio: fechaInicio.toISOString().split('T')[0],
+                fecha_fin: fechaFin.toISOString().split('T')[0],
+            };
+            
+            // Si es admin y hay filtro de usuario, agregarlo
+            if (esAdmin && usuarioFiltro) {
+                params.id_usuario = usuarioFiltro;
+            }
+
+            console.log('📤 Enviando params:', params);
+
+            // ✅ Recibir JSON con base64 en lugar de blob
+            const response = await redBoxApi.post('/descargar_pdf_historial_pagos/', params, {
+                headers: { Authorization: `Token ${token}` },
+            });
+
+            console.log('📥 Respuesta recibida:', response.status);
+
+            // ✅ Verificar que la respuesta fue exitosa
+            if (response.data.success && response.data.pdf_base64) {
+                console.log('📄 PDF recibido en base64, tamaño:', response.data.pdf_base64.length);
+                
+                // ✅ Crear el archivo usando la nueva API de expo-file-system
+                const fechaActual = new Date().toISOString().split('T')[0];
+                const fileName = response.data.filename || `historial_pagos_${fechaActual}.pdf`;
+                const pdfFile = new File(Paths.cache, fileName);
+
+                // ✅ Escribir el contenido base64
+                await pdfFile.write(response.data.pdf_base64, { encoding: 'base64' });
+
+                console.log('✅ Archivo guardado en:', pdfFile.uri);
+                console.log('📄 Tamaño del archivo:', pdfFile.size, 'bytes');
+
+                // ✅ Compartir el archivo
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(pdfFile.uri);
+                    console.log('✅ Archivo compartido');
+                } else {
+                    Alert.alert('Descarga completa', `El PDF se ha guardado en tu dispositivo.\n\nArchivo: ${fileName}`);
+                }
+            } else {
+                // ✅ Mostrar mensaje de error del backend
+                const mensajeError = response.data?.error || 'No se pudo generar el PDF';
+                Alert.alert('Error', mensajeError);
+                console.log('❌ Error del backend:', mensajeError);
+            }
+
+        } catch (error) {
+            console.error('❌ Error descargando PDF:', error);
+            
+            // ✅ Manejo específico de errores
+            if (error.response?.status === 404) {
+                Alert.alert('Error', 'El endpoint de PDF no está disponible. Contacta al administrador.');
+            } else if (error.response?.status === 400) {
+                Alert.alert('Error', error.response?.data?.error || 'Error en la solicitud');
+            } else if (error.message?.includes('permission')) {
+                Alert.alert('Error', 'No tienes permisos para guardar archivos en el dispositivo');
+            } else {
+                Alert.alert('Error', 'No se pudo descargar el PDF del historial');
+            }
+        } finally {
+            setDescargandoPDF(false);
         }
     };
 
@@ -90,10 +238,8 @@ const HistorialPagos = () => {
                     <TituloPrincipal titulo="Historial de pagos" />
                     <TituloSecundario titulo="Consulta los pagos registrados y suscripciones aplicadas." />
 
-                    {/* FILTROS */}
                     <View style={styles.filtrosCard}>
 
-                        {/* Filtro por usuario — solo admin */}
                         {esAdmin && (
                             <View style={styles.filtroItem}>
                                 <Text style={styles.filtroLabel}>Usuario</Text>
@@ -115,34 +261,57 @@ const HistorialPagos = () => {
                             </View>
                         )}
 
-                        {/* Filtro por fecha — ambos roles */}
                         <View style={styles.filtroItem}>
-                            <Text style={styles.filtroLabel}>Fecha</Text>
+                            <Text style={styles.filtroLabel}>Fecha desde</Text>
                             <TouchableOpacity
                                 style={styles.inputFecha}
-                                onPress={() => setShowDatePicker(true)}
+                                onPress={() => {
+                                    setPickerMode('inicio');
+                                    setShowDatePicker(true);
+                                }}
                             >
-                                <Text style={{ color: fechaFiltro ? '#1a1a1a' : '#999' }}>
-                                    {fechaFiltro
-                                        ? fechaFiltro.toLocaleDateString('es-ES')
-                                        : 'Seleccionar fecha'}
+                                <Text style={{ color: fechaInicio ? '#1a1a1a' : '#999' }}>
+                                    {fechaInicio ? formatFecha(fechaInicio) : 'Seleccionar fecha inicio'}
                                 </Text>
                                 <MaterialIcons name="date-range" size={20} color="#666" />
                             </TouchableOpacity>
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    value={fechaFiltro || new Date()}
-                                    mode="date"
-                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                    onChange={(event, date) => {
-                                        setShowDatePicker(false);
-                                        if (date) setFechaFiltro(date);
-                                    }}
-                                />
-                            )}
                         </View>
 
-                        {/* Botones */}
+                        <View style={styles.filtroItem}>
+                            <Text style={styles.filtroLabel}>Fecha hasta</Text>
+                            <TouchableOpacity
+                                style={styles.inputFecha}
+                                onPress={() => {
+                                    setPickerMode('fin');
+                                    setShowDatePicker(true);
+                                }}
+                            >
+                                <Text style={{ color: fechaFin ? '#1a1a1a' : '#999' }}>
+                                    {fechaFin ? formatFecha(fechaFin) : 'Seleccionar fecha fin'}
+                                </Text>
+                                <MaterialIcons name="date-range" size={20} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={fechaInicio || fechaFin || new Date()}
+                                mode="date"
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={(event, date) => {
+                                    setShowDatePicker(false);
+                                    if (date) {
+                                        if (pickerMode === 'inicio') {
+                                            setFechaInicio(date);
+                                        } else {
+                                            setFechaFin(date);
+                                        }
+                                    }
+                                }}
+                                maximumDate={new Date()}
+                            />
+                        )}
+
                         <View style={styles.botonesRow}>
                             <TouchableOpacity style={styles.botonFiltrar} onPress={handleFiltrar}>
                                 {filtrando
@@ -156,7 +325,16 @@ const HistorialPagos = () => {
                         </View>
                     </View>
 
-                    {/* LISTA DE PAGOS */}
+                    {pagos.length > 0 && (
+                        <BotonRojo
+                            titulo={descargandoPDF ? "Generando PDF..." : "📄 Descargar PDF del historial"}
+                            onPress={descargarPDFHistorial}
+                            loading={descargandoPDF}
+                            disabled={descargandoPDF}
+                            style={styles.botonPDF}
+                        />
+                    )}
+
                     {cargando ? (
                         <ActivityIndicator color="#e60000" size="large" style={{ marginTop: 40 }} />
                     ) : pagos.length === 0 ? (
@@ -208,7 +386,8 @@ const styles = StyleSheet.create({
     container: { 
         flex: 1 
     },
-    content: { paddingHorizontal: 16, 
+    content: { 
+        paddingHorizontal: 16, 
         paddingBottom: 30 
     },
     filtrosCard: {
@@ -245,7 +424,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    botonesRow: { flexDirection: 'row', 
+    botonesRow: { 
+        flexDirection: 'row', 
         gap: 8, 
         marginTop: 4 
     },
@@ -272,6 +452,10 @@ const styles = StyleSheet.create({
     textoBotonLimpiar: { 
         color: '#666',
         fontWeight: 'bold' 
+    },
+    botonPDF: {
+        marginBottom: 16,
+        paddingVertical: 12,
     },
     card: {
         backgroundColor: '#fff',

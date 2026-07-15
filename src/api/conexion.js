@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const IP_LOCAL = "192.168.1.110";  // ← Pon tu IP de ipconfig
+const IP_LOCAL = "192.168.1.110";  
 
 export const redBoxApi = axios.create({
   baseURL: `http://${IP_LOCAL}:8000/api`,
@@ -81,7 +81,6 @@ export const cancelarClase = async (claseId) => {
     }
 };
 
-
 //obtener reservas
 export const getReservasUsuario = async (userId) => {
 
@@ -120,12 +119,16 @@ export const getUsuariosEnClase = async (fecha, hora) => {
 };
 
 // obtener historial de pagos segun el rol del usuario
-export const getHistorialPagos = async (token, { idUsuario = null, fecha = null } = {}) => {
-    const params = new URLSearchParams();
-    if (idUsuario) params.append('id_usuario', idUsuario);
-    if (fecha) params.append('fecha', fecha);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const respuesta = await redBoxApi.get(`/historial_pagos/${query}`, {
+export const getHistorialPagos = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.id_usuario) queryParams.append('id_usuario', params.id_usuario);
+    if (params.fecha_inicio) queryParams.append('fecha_inicio', params.fecha_inicio);
+    if (params.fecha_fin) queryParams.append('fecha_fin', params.fecha_fin);
+    
+    const query = queryParams.toString();
+    const url = query ? `/historial_pagos/?${query}` : '/historial_pagos/';
+    
+    const respuesta = await redBoxApi.get(url, {
         headers: { Authorization: `Token ${token}` }
     });
     return respuesta.data;
@@ -165,4 +168,18 @@ export const getMovimientos = async () => {
     });
     movimientosCache = respuesta.data;
     return movimientosCache;
+};
+
+// pdfs
+export const descargarPDFHistorial = async (params, token) => {
+    try {
+        const respuesta = await redBoxApi.post('/descargar_pdf_historial_pagos/', params, {
+            headers: { Authorization: `Token ${token}` },
+            responseType: 'blob',
+        });
+        return respuesta.data;
+    } catch (error) {
+        console.error('❌ Error en descargarPDFHistorial:', error);
+        throw error;
+    }
 };
